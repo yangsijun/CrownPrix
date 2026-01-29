@@ -76,37 +76,77 @@ enum TrackPreprocessor {
             throw TrackPipelineError.mergeFailed(reason: "Paths too short to merge")
         }
 
-        struct Config {
-            let a: [CGPoint]
-            let b: [CGPoint]
-        }
+        let a = removeClosingSegment(pathA)
+        let b = removeClosingSegment(pathB)
 
-        let configs = [
-            Config(a: pathA, b: pathB),
-            Config(a: pathA, b: pathB.reversed()),
-            Config(a: pathA.reversed(), b: pathB),
-            Config(a: pathB, b: pathA),
-        ]
-
-        var bestConfig = configs[0]
         var bestDist = CGFloat.greatestFiniteMagnitude
+        var crossIdxA = 0
+        var crossIdxB = 0
 
-        for config in configs {
-            let d = distance(config.a.last!, config.b.first!)
-            if d < bestDist {
-                bestDist = d
-                bestConfig = config
+        for i in 0..<a.count {
+            for j in 0..<b.count {
+                let d = distance(a[i], b[j])
+                if d < bestDist {
+                    bestDist = d
+                    crossIdxA = i
+                    crossIdxB = j
+                }
             }
         }
 
-        var merged = bestConfig.a
-        if bestDist < 1.0 {
-            merged.append(contentsOf: bestConfig.b.dropFirst())
-        } else {
-            merged.append(contentsOf: bestConfig.b)
+        guard bestDist < 50.0 else {
+            throw TrackPipelineError.mergeFailed(reason: "No crossing point found (min dist: \(bestDist))")
         }
 
+        let loopA = Array(a[crossIdxA...]) + Array(a[..<crossIdxA])
+        let loopB = Array(b[crossIdxB...]) + Array(b[..<crossIdxB])
+
+        let dirEndA = atan2(loopA.last!.y - loopA[loopA.count - 2].y,
+                            loopA.last!.x - loopA[loopA.count - 2].x)
+        let dirStartB = atan2(loopB[1].y - loopB[0].y,
+                              loopB[1].x - loopB[0].x)
+        var angleDiff = abs(dirStartB - dirEndA)
+        if angleDiff > .pi { angleDiff = 2 * .pi - angleDiff }
+
+        let dirStartBRev = atan2(loopB[loopB.count - 2].y - loopB.last!.y,
+                                 loopB[loopB.count - 2].x - loopB.last!.x)
+        var angleDiffRev = abs(dirStartBRev - dirEndA)
+        if angleDiffRev > .pi { angleDiffRev = 2 * .pi - angleDiffRev }
+
+        let finalB = angleDiffRev < angleDiff ? loopB.reversed() as [CGPoint] : loopB
+
+        var merged = loopA
+        merged.append(contentsOf: finalB.dropFirst())
+
         return merged
+    }
+
+    private static func removeClosingSegment(_ points: [CGPoint]) -> [CGPoint] {
+        guard points.count >= 3 else { return points }
+        let first = points[0]
+        let last = points[points.count - 1]
+        guard distance(first, last) < 50.0 else { return points }
+
+        let closingDir = atan2(first.y - last.y, first.x - last.x)
+
+        var cutIndex = points.count
+        for i in stride(from: points.count - 1, through: 1, by: -1) {
+            let prev = points[i - 1]
+            let cur = points[i]
+            let segDir = atan2(cur.y - prev.y, cur.x - prev.x)
+            var diff = abs(segDir - closingDir)
+            if diff > .pi { diff = 2 * .pi - diff }
+            if diff < 0.15 {
+                cutIndex = i
+            } else {
+                break
+            }
+        }
+
+        if cutIndex < points.count {
+            return Array(points[0..<cutIndex])
+        }
+        return points
     }
 
     // MARK: - Normalization
