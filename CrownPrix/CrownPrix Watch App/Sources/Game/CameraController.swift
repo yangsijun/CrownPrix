@@ -22,7 +22,5 @@ final class CameraController {
         cameraNode.position.y += (targetY - cameraNode.position.y) * smoothFactor
 
         cameraNode.zRotation = carHeading - .pi / 2
-
-        uiNode.zRotation = -cameraNode.zRotation
     }
 }

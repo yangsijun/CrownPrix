@@ -25,7 +25,6 @@ struct ContentView: View {
 
         case .race(let trackId):
             RaceView(trackId: trackId) { lapTime in
-                PersistenceManager.saveBestTime(trackId: trackId, time: lapTime)
                 screen = .result(trackId: trackId, lapTime: lapTime)
             }
 

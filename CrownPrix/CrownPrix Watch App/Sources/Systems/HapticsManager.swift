@@ -6,7 +6,7 @@ enum HapticsManager {
     }
 
     static func playCountdownGo() {
-        WKInterfaceDevice.current().play(.directionUp)
+        WKInterfaceDevice.current().play(.click)
     }
 
     static func playCrownClick() {
@@ -14,14 +14,14 @@ enum HapticsManager {
     }
 
     static func playWallCollision() {
-        WKInterfaceDevice.current().play(.retry)
+        WKInterfaceDevice.current().play(.click)
     }
 
     static func playLapComplete() {
-        WKInterfaceDevice.current().play(.directionUp)
+        WKInterfaceDevice.current().play(.click)
     }
 
     static func playNewRecord() {
-        WKInterfaceDevice.current().play(.success)
+        WKInterfaceDevice.current().play(.click)
     }
 }

@@ -18,6 +18,7 @@ final class GameScene: SKScene, ObservableObject {
     private var raceCountdown: RaceCountdown?
     private var timerHUD: TimerHUD?
     private var minimap: MinimapView?
+    private var wrongWayIndicator: WrongWayIndicator?
 
     private var lastUpdateTime: TimeInterval = 0
     private var didSetup = false
@@ -55,7 +56,6 @@ final class GameScene: SKScene, ObservableObject {
         camera = cam.cameraNode
         cam.cameraNode.position = car.position
         cam.cameraNode.zRotation = trackData.startHeading - .pi / 2
-        cam.uiNode.zRotation = -(trackData.startHeading - .pi / 2)
         cameraController = cam
 
         physicsEngine = PhysicsEngine(
@@ -69,17 +69,19 @@ final class GameScene: SKScene, ObservableObject {
 
         let lap = LapDetector(trackData: trackData)
         let currentTrackId = trackId ?? ""
-        lap.onLapComplete = { [weak self] (time: TimeInterval) in
-            let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: time)
-            self?.timerHUD?.freeze(isNewRecord: isNew)
-            self?.onLapComplete?(time)
+        lap.onLapComplete = { [weak self] in
+            guard let self, let timer = self.timerHUD else { return }
+            let lapTime = timer.currentTime
+            let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
+            timer.freeze(isNewRecord: isNew)
+            self.onLapComplete?(lapTime)
         }
         lapDetector = lap
 
         let countdown = RaceCountdown()
         countdown.attachTo(camera: cam.uiNode)
         countdown.onCountdownComplete = { [weak self] in
-            self?.lapDetector?.startRace(at: 0)
+            self?.lapDetector?.startRace()
             self?.timerHUD?.start()
         }
         raceCountdown = countdown
@@ -91,6 +93,10 @@ final class GameScene: SKScene, ObservableObject {
         let mini = MinimapView(trackData: trackData)
         mini.attachTo(camera: cam.uiNode, sceneSize: size)
         minimap = mini
+
+        let wrongWay = WrongWayIndicator()
+        wrongWay.attachTo(camera: cam.uiNode, sceneSize: size)
+        wrongWayIndicator = wrongWay
     }
 
     override func update(_ currentTime: TimeInterval) {
@@ -112,11 +118,25 @@ final class GameScene: SKScene, ObservableObject {
         carNode?.position = physics.carPosition
         carNode?.zRotation = physics.carHeading
 
-        timerHUD?.update(deltaTime: dt)
+        timerHUD?.update(deltaTime: dt, speed: physics.currentSpeed)
 
-        lap.update(currentSegmentIndex: collision.currentSegmentIndex, currentTime: currentTime)
+        lap.update(currentSegmentIndex: collision.currentSegmentIndex)
 
         minimap?.update(carPosition: physics.carPosition)
+
+        if let td = trackData {
+            let segIdx = collision.currentSegmentIndex
+            let nextIdx = (segIdx + 1) % td.points.count
+            let trackDir = atan2(
+                td.points[nextIdx].y - td.points[segIdx].y,
+                td.points[nextIdx].x - td.points[segIdx].x
+            )
+            wrongWayIndicator?.update(
+                carHeading: physics.carHeading,
+                trackDirection: trackDir,
+                deltaTime: dt
+            )
+        }
     }
 
     override func didSimulatePhysics() {

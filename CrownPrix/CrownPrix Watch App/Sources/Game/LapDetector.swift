@@ -12,21 +12,25 @@ final class LapDetector {
     private let startSegmentIndex: Int
     private let halfLapSegmentIndex: Int
     private let totalSegments: Int
-    var onLapComplete: ((TimeInterval) -> Void)?
-    private var lapStartTime: TimeInterval = 0
+    private let window: Int
+    var onLapComplete: (() -> Void)?
+    private var previousSegmentIndex: Int
 
     init(trackData: TrackData) {
         self.totalSegments = trackData.points.count
         self.startSegmentIndex = trackData.startSegmentIndex
         self.halfLapSegmentIndex = (trackData.startSegmentIndex + totalSegments / 2) % totalSegments
+        self.window = GameConfig.lapCrossSegmentWindow
+        self.previousSegmentIndex = trackData.startSegmentIndex
     }
 
-    func startRace(at time: TimeInterval) {
+    func startRace() {
         state = .racing
-        lapStartTime = time
     }
 
-    func update(currentSegmentIndex: Int, currentTime: TimeInterval) {
+    func update(currentSegmentIndex: Int) {
+        defer { previousSegmentIndex = currentSegmentIndex }
+
         switch state {
         case .preStart, .lapComplete:
             break
@@ -35,9 +39,9 @@ final class LapDetector {
                 state = .halfLap
             }
         case .halfLap:
-            if isNearStart(currentSegmentIndex) {
+            if didCrossStart(previous: previousSegmentIndex, current: currentSegmentIndex) {
                 state = .lapComplete
-                onLapComplete?(currentTime - lapStartTime)
+                onLapComplete?()
             }
         }
     }
@@ -46,16 +50,18 @@ final class LapDetector {
         state = .preStart
     }
 
+    private func didCrossStart(previous: Int, current: Int) -> Bool {
+        let nearEnd = previous >= totalSegments - window
+        let nearStart = current <= window
+        return nearEnd && nearStart
+    }
+
     private func circularDistance(_ a: Int, _ b: Int) -> Int {
         let d = (a - b + totalSegments) % totalSegments
         return min(d, totalSegments - d)
     }
 
     private func isNearHalfLap(_ idx: Int) -> Bool {
-        circularDistance(idx, halfLapSegmentIndex) < GameConfig.lapCrossSegmentWindow
-    }
-
-    private func isNearStart(_ idx: Int) -> Bool {
-        circularDistance(idx, startSegmentIndex) < GameConfig.lapCrossSegmentWindow
+        circularDistance(idx, halfLapSegmentIndex) < window
     }
 }

@@ -75,7 +75,7 @@ final class MinimapView {
     }
 
     func attachTo(camera: SKNode, sceneSize: CGSize) {
-        containerNode.position = CGPoint(x: sceneSize.width / 2 - 35, y: -sceneSize.height / 2 + 35)
+        containerNode.position = CGPoint(x: sceneSize.width / 2 - 70, y: -sceneSize.height / 2 + 65)
         camera.addChild(containerNode)
     }
 

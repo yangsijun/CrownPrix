@@ -9,7 +9,7 @@ final class RaceCountdown {
 
     init() {
         countdownLabel = SKLabelNode(fontNamed: ".AppleSystemUIFontRounded-Bold")
-        countdownLabel.fontSize = 36
+        countdownLabel.fontSize = 56
         countdownLabel.fontColor = .white
         countdownLabel.horizontalAlignmentMode = .center
         countdownLabel.verticalAlignmentMode = .center
