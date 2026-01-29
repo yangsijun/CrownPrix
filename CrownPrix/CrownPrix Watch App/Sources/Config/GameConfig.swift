@@ -3,8 +3,8 @@ import Foundation
 
 enum GameConfig {
     // MARK: - Crown Input
-    static let maxTurnRate: CGFloat = 3.2
-    static let steeringResponse: CGFloat = 8.0
+    static let maxTurnRate: CGFloat = 6.0
+    static let steeringResponse: CGFloat = 12.0
 
     // MARK: - Speed (points/sec at targetTrackSize=2000)
     static let maxSpeed: CGFloat = 180.0
