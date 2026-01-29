@@ -46,6 +46,7 @@ final class TrackPipelineTests: XCTestCase {
         XCTAssertFalse(trackData.points.isEmpty)
     }
 
+
     func testParseMonacoProducesClosedPath() throws {
         let bundle = Bundle.main
         guard let metadata = TrackRegistry.track(byId: "monaco") else {

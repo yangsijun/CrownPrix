@@ -13,13 +13,13 @@ enum GameConfig {
     static let speedRecoveryRate: CGFloat = 150.0
 
     // MARK: - Track (game units at targetTrackSize=2000)
-    static let roadHalfWidth: CGFloat = 20.0
+    static let roadHalfWidth: CGFloat = 14.0
     static let targetTrackSize: CGFloat = 2000.0
     static let trackPointCount: Int = 800
-    static let wallBounceDistance: CGFloat = 3.0
+    static let wallBounceDistance: CGFloat = 2.0
 
     // MARK: - Camera
-    static let cameraScale: CGFloat = 0.65
+    static let cameraScale: CGFloat = 0.45
     static let cameraSmoothSpeed: CGFloat = 8.0
 
     // MARK: - Collision & Lap
