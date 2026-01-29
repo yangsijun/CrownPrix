@@ -20,6 +20,7 @@ final class GameScene: SKScene, ObservableObject {
     private var minimap: MinimapView?
 
     private var lastUpdateTime: TimeInterval = 0
+    private var didSetup = false
 
     func configure(trackId: String, trackData: TrackData) {
         self.trackId = trackId
@@ -30,8 +31,12 @@ final class GameScene: SKScene, ObservableObject {
         super.sceneDidLoad()
         backgroundColor = SKColor(white: 0.12, alpha: 1)
         physicsWorld.gravity = .zero
+        setupIfNeeded()
+    }
 
-        guard let trackData else { return }
+    private func setupIfNeeded() {
+        guard !didSetup, let trackData else { return }
+        didSetup = true
 
         let renderer = TrackRenderer(trackData: trackData)
         addChild(renderer.trackNode)
@@ -89,6 +94,8 @@ final class GameScene: SKScene, ObservableObject {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        setupIfNeeded()
+
         let dt = lastUpdateTime > 0 ? currentTime - lastUpdateTime : 1.0 / Double(GameConfig.targetFrameRate)
         lastUpdateTime = currentTime
 
