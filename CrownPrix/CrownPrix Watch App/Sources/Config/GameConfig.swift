@@ -7,9 +7,9 @@ enum GameConfig {
     static let steeringResponse: CGFloat = 8.0
 
     // MARK: - Speed (points/sec at targetTrackSize=2000)
-    static let maxSpeed: CGFloat = 300.0
-    static let minSpeedAtMaxSteer: CGFloat = 120.0
-    static let accelerationRate: CGFloat = 250.0
+    static let maxSpeed: CGFloat = 180.0
+    static let minSpeedAtMaxSteer: CGFloat = 70.0
+    static let accelerationRate: CGFloat = 150.0
     static let wallSlowdownFactor: CGFloat = 0.45
     static let speedRecoveryRate: CGFloat = 150.0
 
