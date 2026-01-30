@@ -29,7 +29,7 @@ final class PhysicsEngine {
         if delta > 1.0 { delta -= 2.0 }
         if delta < -1.0 { delta += 2.0 }
 
-        carHeading += CGFloat(delta) * GameConfig.maxTurnRate
+        carHeading -= CGFloat(delta) * GameConfig.maxTurnRate
 
         let turnSpeed = dt > 0.0001 ? abs(CGFloat(delta)) / dt : 0
         let normalizedTurn = min(turnSpeed / GameConfig.maxTurnRate, 1.0)

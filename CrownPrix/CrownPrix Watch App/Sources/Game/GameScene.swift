@@ -14,6 +14,7 @@ final class GameScene: SKScene, ObservableObject {
     private var physicsEngine: PhysicsEngine?
     private var collisionSystem: CollisionSystem?
     private(set) var lapDetector: LapDetector?
+    private var sectorDetector: SectorDetector?
 
     private var raceCountdown: RaceCountdown?
     private var timerHUD: TimerHUD?
@@ -68,21 +69,30 @@ final class GameScene: SKScene, ObservableObject {
         collision.onWallCollision = { HapticsManager.playWallCollision() }
         collisionSystem = collision
 
-        let lap = LapDetector(trackData: trackData)
         let currentTrackId = trackId ?? ""
+
+        let lap = LapDetector(trackData: trackData)
         lap.onLapComplete = { [weak self] in
             guard let self, let timer = self.timerHUD else { return }
             let lapTime = timer.currentTime
             let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
             timer.freeze(isNewRecord: isNew)
+            self.sectorDetector?.saveBestSectorTimes()
             self.onLapComplete?(lapTime)
         }
         lapDetector = lap
+
+        let sector = SectorDetector(trackId: currentTrackId, segmentCount: trackData.points.count)
+        sector.onSectorComplete = { [weak self] sectorIndex, time, color in
+            self?.timerHUD?.showSectorTime(sector: sectorIndex, time: time, color: color)
+        }
+        sectorDetector = sector
 
         let countdown = RaceCountdown()
         countdown.attachTo(camera: cam.uiNode)
         countdown.onCountdownComplete = { [weak self] in
             self?.lapDetector?.startRace()
+            self?.sectorDetector?.startRace()
             self?.timerHUD?.start()
         }
         raceCountdown = countdown
@@ -122,6 +132,13 @@ final class GameScene: SKScene, ObservableObject {
         timerHUD?.update(deltaTime: dt, speed: physics.currentSpeed)
 
         lap.update(currentSegmentIndex: collision.currentSegmentIndex)
+
+        if let timer = timerHUD {
+            sectorDetector?.update(
+                currentSegmentIndex: collision.currentSegmentIndex,
+                elapsedTime: timer.currentTime
+            )
+        }
 
         minimap?.update(carPosition: physics.carPosition)
 

@@ -3,6 +3,7 @@ import SpriteKit
 final class TimerHUD {
     private let timerLabel: SKLabelNode
     private let speedLabel: SKLabelNode
+    private let sectorLabels: [SKLabelNode]
     private var elapsedTime: TimeInterval = 0
     private var isRunning: Bool = false
     private var isFrozen: Bool = false
@@ -23,11 +24,29 @@ final class TimerHUD {
         speedLabel.verticalAlignmentMode = .center
         speedLabel.zPosition = 100
         speedLabel.text = "0 km/h"
+
+        sectorLabels = (0..<3).map { i in
+            let label = SKLabelNode(fontNamed: "Menlo-Bold")
+            label.fontSize = 16
+            label.fontColor = SKColor(white: 0.5, alpha: 1)
+            label.horizontalAlignmentMode = .center
+            label.verticalAlignmentMode = .center
+            label.zPosition = 100
+            label.text = "S\(i + 1) --"
+            return label
+        }
     }
 
     func attachTo(camera: SKNode, sceneSize: CGSize) {
         timerLabel.position = CGPoint(x: 0, y: sceneSize.height / 2 - 40)
         camera.addChild(timerLabel)
+
+        let sectorY = sceneSize.height / 2 - 68
+        let spacing: CGFloat = 80
+        for (i, label) in sectorLabels.enumerated() {
+            label.position = CGPoint(x: CGFloat(i - 1) * spacing, y: sectorY)
+            camera.addChild(label)
+        }
 
         speedLabel.position = CGPoint(x: 0, y: -sceneSize.height / 2 + 32)
         camera.addChild(speedLabel)
@@ -51,10 +70,35 @@ final class TimerHUD {
         speedLabel.text = "\(kmh) km/h"
     }
 
+    func showSectorTime(sector: Int, time: TimeInterval, color: SectorColor) {
+        guard sector >= 0, sector < 3 else { return }
+        let label = sectorLabels[sector]
+        let secs = Int(time) % 60
+        let millis = Int((time.truncatingRemainder(dividingBy: 1)) * 1000)
+        let minutes = Int(time) / 60
+        if minutes > 0 {
+            label.text = String(format: "S%d %d:%02d.%03d", sector + 1, minutes, secs, millis)
+        } else {
+            label.text = String(format: "S%d %d.%03d", sector + 1, secs, millis)
+        }
+        label.fontColor = color.skColor
+    }
+
     func freeze(isNewRecord: Bool) {
         isFrozen = true
         timerLabel.fontColor = isNewRecord ? .green : .white
     }
 
     var currentTime: TimeInterval { elapsedTime }
+}
+
+extension SectorColor {
+    var skColor: SKColor {
+        switch self {
+        case .white:  return .white
+        case .yellow: return .yellow
+        case .green:  return .green
+        case .purple: return SKColor(red: 0.7, green: 0.3, blue: 1.0, alpha: 1)
+        }
+    }
 }

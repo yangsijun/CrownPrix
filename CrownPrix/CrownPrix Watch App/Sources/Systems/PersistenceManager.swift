@@ -32,4 +32,21 @@ enum PersistenceManager {
         let currentBest = getBestTime(trackId: trackId)
         return currentBest == nil || time < currentBest!
     }
+
+    static func saveBestSectorTimes(trackId: String, times: [TimeInterval?]) {
+        for (i, time) in times.enumerated() {
+            guard let t = time else { continue }
+            let key = "bestSector.\(trackId).\(i)"
+            let current = UserDefaults.standard.object(forKey: key) as? TimeInterval
+            if current == nil || t < current! {
+                UserDefaults.standard.set(t, forKey: key)
+            }
+        }
+    }
+
+    static func getBestSectorTimes(trackId: String) -> [TimeInterval?] {
+        (0..<3).map { i in
+            UserDefaults.standard.object(forKey: "bestSector.\(trackId).\(i)") as? TimeInterval
+        }
+    }
 }
