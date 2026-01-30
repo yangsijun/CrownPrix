@@ -7,7 +7,7 @@ struct HomeView: View {
         VStack(spacing: 16) {
             Spacer()
 
-            Text("CrownPrix")
+            Text("Crown Prix")
                 .font(.system(.title, design: .rounded, weight: .bold))
 
             Text("F1 Time Attack")

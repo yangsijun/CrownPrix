@@ -103,9 +103,10 @@ final class TrackRenderer {
         let outerOffset = halfW + curbWidth
 
         for i in 0..<count {
+            let prev = (i - 1 + count) % count
             let next = (i + 1) % count
-            let dx = pts[next].x - pts[i].x
-            let dy = pts[next].y - pts[i].y
+            let dx = pts[next].x - pts[prev].x
+            let dy = pts[next].y - pts[prev].y
             let len = sqrt(dx * dx + dy * dy)
             if len > 0 {
                 let px = -dy / len * sign
@@ -132,43 +133,59 @@ final class TrackRenderer {
 
         let paths = (0..<patternCount).map { _ in CGMutablePath() }
 
-        var segStart = 0
-        var currentStripe = 0
+        let totalArc = arcLen[count - 1]
+        let stripeCount = Int(ceil(totalArc / stripeWidth))
+        var cursor = 0
 
-        for i in 1..<count {
-            let stripe = Int(arcLen[i] / stripeWidth)
+        for s in 0..<stripeCount {
+            let arcStart = CGFloat(s) * stripeWidth
+            let arcEnd = min(CGFloat(s + 1) * stripeWidth, totalArc)
+            guard arcEnd > arcStart else { continue }
 
-            if stripe != currentStripe {
-                if i > segStart {
-                    let target = paths[currentStripe % patternCount]
-                    Self.addRibbonQuad(target, inner: innerPts, outer: outerPts,
-                                       from: segStart, to: i)
-                }
-                segStart = i
-                currentStripe = stripe
+            var innerStripe = [CGPoint]()
+            var outerStripe = [CGPoint]()
+
+            while cursor > 0 && arcLen[cursor] > arcStart { cursor -= 1 }
+            while cursor + 1 < count && arcLen[cursor + 1] <= arcStart { cursor += 1 }
+            let si = cursor
+            let st = (arcLen[si + 1] > arcLen[si])
+                ? (arcStart - arcLen[si]) / (arcLen[si + 1] - arcLen[si]) : 0
+
+            innerStripe.append(Self.lerp(innerPts[si], innerPts[si + 1], st))
+            outerStripe.append(Self.lerp(outerPts[si], outerPts[si + 1], st))
+
+            for j in (si + 1)..<count {
+                if arcLen[j] >= arcEnd { break }
+                innerStripe.append(innerPts[j])
+                outerStripe.append(outerPts[j])
             }
-        }
 
-        if count - 1 > segStart {
-            let target = paths[currentStripe % patternCount]
-            Self.addRibbonQuad(target, inner: innerPts, outer: outerPts,
-                               from: segStart, to: count - 1)
+            while cursor + 1 < count && arcLen[cursor + 1] <= arcEnd { cursor += 1 }
+            let ei = min(cursor, count - 2)
+            let et = (arcLen[ei + 1] > arcLen[ei])
+                ? (arcEnd - arcLen[ei]) / (arcLen[ei + 1] - arcLen[ei]) : 0
+
+            innerStripe.append(Self.lerp(innerPts[ei], innerPts[ei + 1], et))
+            outerStripe.append(Self.lerp(outerPts[ei], outerPts[ei + 1], et))
+
+            guard innerStripe.count >= 2 else { continue }
+
+            let target = paths[s % patternCount]
+            target.move(to: innerStripe[0])
+            for j in 1..<innerStripe.count {
+                target.addLine(to: innerStripe[j])
+            }
+            for j in stride(from: outerStripe.count - 1, through: 0, by: -1) {
+                target.addLine(to: outerStripe[j])
+            }
+            target.closeSubpath()
         }
 
         return paths
     }
 
-    private static func addRibbonQuad(_ path: CGMutablePath,
-                                      inner: [CGPoint], outer: [CGPoint],
-                                      from start: Int, to end: Int) {
-        path.move(to: inner[start])
-        for j in (start + 1)...end {
-            path.addLine(to: inner[j])
-        }
-        for j in stride(from: end, through: start, by: -1) {
-            path.addLine(to: outer[j])
-        }
-        path.closeSubpath()
+    private static func lerp(_ a: CGPoint, _ b: CGPoint, _ t: CGFloat) -> CGPoint {
+        CGPoint(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t)
     }
 
     // MARK: - Curb Colors
