@@ -1,47 +1,71 @@
 import SpriteKit
 
 final class RaceCountdown {
-    private let countdownLabel: SKLabelNode
-    private var countdownValue: Int = 3
-    private var countdownElapsed: TimeInterval = 0
+    private let containerNode: SKNode
+    private var lightNodes: [SKShapeNode] = []
+    private var litCount: Int = 0
+    private var elapsed: TimeInterval = 0
+    private var lightsOutDone = false
     private(set) var isCountingDown: Bool = true
     var onCountdownComplete: (() -> Void)?
 
+    private let totalLights = 5
+    private let lightInterval: TimeInterval = 1.0
+    private let lightsOutDelay: TimeInterval = 0.4
+
     init() {
-        countdownLabel = SKLabelNode(fontNamed: ".AppleSystemUIFontRounded-Bold")
-        countdownLabel.fontSize = 56
-        countdownLabel.fontColor = .white
-        countdownLabel.horizontalAlignmentMode = .center
-        countdownLabel.verticalAlignmentMode = .center
-        countdownLabel.zPosition = 100
-        countdownLabel.text = "3"
+        containerNode = SKNode()
+        containerNode.zPosition = 200
+
+        let spacing: CGFloat = 22
+        let totalWidth = CGFloat(totalLights - 1) * spacing
+        let startX = -totalWidth / 2
+
+        for i in 0..<totalLights {
+            let light = SKShapeNode(circleOfRadius: 8)
+            light.position = CGPoint(x: startX + CGFloat(i) * spacing, y: 0)
+            light.fillColor = SKColor(white: 0.2, alpha: 1)
+            light.strokeColor = SKColor(white: 0.4, alpha: 1)
+            light.lineWidth = 1
+            containerNode.addChild(light)
+            lightNodes.append(light)
+        }
     }
 
     func attachTo(camera: SKNode) {
-        countdownLabel.position = .zero
-        camera.addChild(countdownLabel)
+        containerNode.position = .zero
+        camera.addChild(containerNode)
     }
 
     func update(deltaTime: TimeInterval) {
         guard isCountingDown else { return }
 
-        countdownElapsed += deltaTime
+        elapsed += deltaTime
 
-        while countdownElapsed >= GameConfig.countdownStepInterval {
-            countdownElapsed -= GameConfig.countdownStepInterval
-            countdownValue -= 1
-
-            if countdownValue > 0 {
-                countdownLabel.text = "\(countdownValue)"
-                HapticsManager.playCountdownBeat()
-            } else if countdownValue == 0 {
-                countdownLabel.text = "GO!"
-                HapticsManager.playCountdownGo()
-            } else {
-                countdownLabel.isHidden = true
+        if litCount < totalLights {
+            let targetLit = min(totalLights, Int(elapsed / lightInterval) + 1)
+            while litCount < targetLit {
+                lightNodes[litCount].fillColor = .red
+                lightNodes[litCount].strokeColor = .red
+                HapticsManager.playStartLight()
+                litCount += 1
+            }
+        } else if !lightsOutDone {
+            let timeSinceAllLit = elapsed - Double(totalLights) * lightInterval
+            if timeSinceAllLit >= lightsOutDelay {
+                for light in lightNodes {
+                    light.fillColor = .clear
+                    light.strokeColor = SKColor(white: 0.3, alpha: 1)
+                }
+                lightsOutDone = true
+                HapticsManager.playStartGo()
+            }
+        } else {
+            let timeSinceLightsOut = elapsed - Double(totalLights) * lightInterval - lightsOutDelay
+            if timeSinceLightsOut >= 0.5 {
+                containerNode.isHidden = true
                 isCountingDown = false
                 onCountdownComplete?()
-                break
             }
         }
     }

@@ -9,6 +9,14 @@ enum HapticsManager {
         WKInterfaceDevice.current().play(.click)
     }
 
+    static func playStartLight() {
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    static func playStartGo() {
+        WKInterfaceDevice.current().play(.start)
+    }
+
     static func playCrownClick() {
         WKInterfaceDevice.current().play(.click)
     }
