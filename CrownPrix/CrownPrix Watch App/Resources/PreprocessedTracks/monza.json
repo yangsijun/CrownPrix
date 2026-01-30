@@ -3201,7 +3201,7 @@
       "y" : 409.84145628405463
     }
   ],
-  "roadHalfWidth" : 14,
+  "roadHalfWidth" : 16,
   "startHeading" : -1.4845325149165038,
   "startSegmentIndex" : 0,
   "totalLength" : 5136.857769429384
