@@ -9,6 +9,11 @@ struct LeaderboardEntry: Identifiable {
     let isLocalPlayer: Bool
 }
 
+struct LeaderboardData {
+    let topEntries: [LeaderboardEntry]
+    let localPlayer: LeaderboardEntry?
+}
+
 final class GameCenterManager: ObservableObject {
     static let shared = GameCenterManager()
     @Published var isAuthenticated: Bool = false
@@ -47,10 +52,17 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadTopScores(leaderboardId: String, count: Int) async throws -> [LeaderboardEntry] {
+        let data = try await loadLeaderboard(leaderboardId: leaderboardId, topCount: count)
+        return data.topEntries
+    }
+
+    func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
         let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
-        guard let leaderboard = leaderboards.first else { return [] }
-        let (_, entries, _) = try await leaderboard.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...count))
-        return entries.map { entry in
+        guard let leaderboard = leaderboards.first else {
+            return LeaderboardData(topEntries: [], localPlayer: nil)
+        }
+        let (localEntry, entries, _) = try await leaderboard.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
+        let topEntries = entries.map { entry in
             LeaderboardEntry(
                 rank: entry.rank,
                 playerName: entry.player.displayName,
@@ -58,6 +70,15 @@ final class GameCenterManager: ObservableObject {
                 isLocalPlayer: entry.player == GKLocalPlayer.local
             )
         }
+        let local: LeaderboardEntry? = localEntry.map {
+            LeaderboardEntry(
+                rank: $0.rank,
+                playerName: $0.player.displayName,
+                lapTime: TimeInterval($0.score) / 1000.0,
+                isLocalPlayer: true
+            )
+        }
+        return LeaderboardData(topEntries: topEntries, localPlayer: local)
     }
 
     func submitSectorTimes(trackId: String, times: [TimeInterval?]) {

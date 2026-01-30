@@ -9,10 +9,14 @@ struct HomeView: View {
 
             Text("Crown Prix")
                 .font(.system(.title, design: .rounded, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Text("The Tiniest Race on Your Wrist")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Spacer()
 
