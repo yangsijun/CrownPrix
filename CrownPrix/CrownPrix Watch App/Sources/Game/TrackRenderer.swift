@@ -82,7 +82,7 @@ final class TrackRenderer {
             cn.fillColor = pattern[i]
             cn.strokeColor = .clear
             cn.lineWidth = 0
-            cn.zPosition = -1
+            cn.zPosition = 0.5
             return cn
         }
     }
@@ -99,8 +99,8 @@ final class TrackRenderer {
         innerPts.reserveCapacity(count)
         outerPts.reserveCapacity(count)
 
-        let innerOffset = halfW
-        let outerOffset = halfW + curbWidth
+        let innerOffset = halfW - curbWidth
+        let outerOffset = halfW
 
         for i in 0..<count {
             let prev = (i - 1 + count) % count
