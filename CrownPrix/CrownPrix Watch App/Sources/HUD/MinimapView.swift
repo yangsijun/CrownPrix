@@ -31,7 +31,7 @@ final class MinimapView {
         let centerX = (minX + maxX) / 2
         let centerY = (minY + maxY) / 2
         minimapOffset = CGPoint(x: centerX, y: centerY)
-        minimapScale = 50.0 / max(bboxWidth, bboxHeight, 1)
+        minimapScale = 75.0 / max(bboxWidth, bboxHeight, 1)
 
         let path = CGMutablePath()
         let stride = max(1, trackPoints.count / 80)
@@ -55,7 +55,7 @@ final class MinimapView {
         trackOutline.fillColor = .clear
         containerNode.addChild(trackOutline)
 
-        carDot = SKShapeNode(circleOfRadius: 3)
+        carDot = SKShapeNode(circleOfRadius: 4)
         carDot.fillColor = .red
         carDot.strokeColor = .clear
         carDot.zPosition = 1
@@ -75,7 +75,7 @@ final class MinimapView {
     }
 
     func attachTo(camera: SKNode, sceneSize: CGSize) {
-        containerNode.position = CGPoint(x: sceneSize.width / 2 - 70, y: -sceneSize.height / 2 + 65)
+        containerNode.position = CGPoint(x: sceneSize.width / 2 - 85, y: -sceneSize.height / 2 + 80)
         camera.addChild(containerNode)
     }
 

@@ -4,6 +4,7 @@ final class TimerHUD {
     private let timerLabel: SKLabelNode
     private let speedLabel: SKLabelNode
     private let sectorLabels: [SKLabelNode]
+    private let sectorBackgrounds: [SKShapeNode]
     private var elapsedTime: TimeInterval = 0
     private var isRunning: Bool = false
     private var isFrozen: Bool = false
@@ -25,16 +26,25 @@ final class TimerHUD {
         speedLabel.zPosition = 100
         speedLabel.text = "0 km/h"
 
+        var bgs: [SKShapeNode] = []
         sectorLabels = (0..<3).map { i in
             let label = SKLabelNode(fontNamed: "Menlo-Bold")
             label.fontSize = 16
             label.fontColor = SKColor(white: 0.5, alpha: 1)
             label.horizontalAlignmentMode = .center
             label.verticalAlignmentMode = .center
-            label.zPosition = 100
-            label.text = "S\(i + 1) --"
+            label.zPosition = 101
+            label.text = "S\(i + 1) --.---"
+
+            let bg = SKShapeNode(rectOf: CGSize(width: 72, height: 20), cornerRadius: 4)
+            bg.fillColor = .clear
+            bg.strokeColor = .clear
+            bg.zPosition = 100
+            bgs.append(bg)
+
             return label
         }
+        sectorBackgrounds = bgs
     }
 
     func attachTo(camera: SKNode, sceneSize: CGSize) {
@@ -44,7 +54,10 @@ final class TimerHUD {
         let sectorY = sceneSize.height / 2 - 68
         let spacing: CGFloat = 80
         for (i, label) in sectorLabels.enumerated() {
-            label.position = CGPoint(x: CGFloat(i - 1) * spacing, y: sectorY)
+            let x = CGFloat(i - 1) * spacing
+            sectorBackgrounds[i].position = CGPoint(x: x, y: sectorY)
+            camera.addChild(sectorBackgrounds[i])
+            label.position = CGPoint(x: x, y: sectorY)
             camera.addChild(label)
         }
 
@@ -81,7 +94,8 @@ final class TimerHUD {
         } else {
             label.text = String(format: "S%d %d.%03d", sector + 1, secs, millis)
         }
-        label.fontColor = color.skColor
+        label.fontColor = .black
+        sectorBackgrounds[sector].fillColor = color.skColor
     }
 
     func freeze(isNewRecord: Bool) {

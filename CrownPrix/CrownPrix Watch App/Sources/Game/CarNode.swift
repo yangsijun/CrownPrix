@@ -34,7 +34,7 @@ final class CarNode: SKShapeNode {
         }
 
         let cockpit = SKShapeNode(circleOfRadius: 1.0)
-        cockpit.position = CGPoint(x: 1, y: 0)
+        cockpit.position = CGPoint(x: -1.5, y: 0)
         cockpit.fillColor = SKColor(white: 0.2, alpha: 1)
         cockpit.strokeColor = .clear
         cockpit.zPosition = 1
