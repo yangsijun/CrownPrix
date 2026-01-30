@@ -59,4 +59,39 @@ final class GameCenterManager: ObservableObject {
             )
         }
     }
+
+    func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
+        guard isAuthenticated else { return }
+        Task {
+            for (i, time) in times.enumerated() {
+                guard let t = time else { continue }
+                let leaderboardId = "crownprix.sector.\(trackId).\(i)"
+                let score = Int(t * 1000)
+                do {
+                    try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+                } catch {
+                    print("Sector score submission failed: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    func loadGlobalBestSectorTimes(trackId: String) async -> [TimeInterval?] {
+        guard isAuthenticated else { return [nil, nil, nil] }
+        var result: [TimeInterval?] = [nil, nil, nil]
+        for i in 0..<3 {
+            let leaderboardId = "crownprix.sector.\(trackId).\(i)"
+            do {
+                let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
+                guard let lb = leaderboards.first else { continue }
+                let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
+                if let top = entries.first {
+                    result[i] = TimeInterval(top.score) / 1000.0
+                }
+            } catch {
+                continue
+            }
+        }
+        return result
+    }
 }

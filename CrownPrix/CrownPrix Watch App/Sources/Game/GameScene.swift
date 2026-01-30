@@ -78,6 +78,9 @@ final class GameScene: SKScene, ObservableObject {
             let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
             timer.freeze(isNewRecord: isNew)
             self.sectorDetector?.saveBestSectorTimes()
+            if let times = self.sectorDetector?.sectorTimes {
+                GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: times)
+            }
             self.onLapComplete?(lapTime)
         }
         lapDetector = lap
@@ -87,6 +90,11 @@ final class GameScene: SKScene, ObservableObject {
             self?.timerHUD?.showSectorTime(sector: sectorIndex, time: time, color: color)
         }
         sectorDetector = sector
+
+        Task {
+            let globalTimes = await GameCenterManager.shared.loadGlobalBestSectorTimes(trackId: currentTrackId)
+            await MainActor.run { sector.setGlobalBestSectorTimes(globalTimes) }
+        }
 
         let countdown = RaceCountdown()
         countdown.attachTo(camera: cam.uiNode)

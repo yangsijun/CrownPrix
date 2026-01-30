@@ -18,12 +18,17 @@ final class SectorDetector {
 
     private let trackId: String
     private var bestSectorTimes: [TimeInterval?]
+    private var globalBestSectorTimes: [TimeInterval?] = [nil, nil, nil]
 
     init(trackId: String, segmentCount: Int) {
         self.trackId = trackId
         self.totalSegments = segmentCount
         self.boundaries = SectorConfig.boundaries(for: trackId, segmentCount: segmentCount)
         self.bestSectorTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
+    }
+
+    func setGlobalBestSectorTimes(_ times: [TimeInterval?]) {
+        globalBestSectorTimes = times
     }
 
     func startRace() {
@@ -61,6 +66,9 @@ final class SectorDetector {
     }
 
     private func determineSectorColor(sector: Int, time: TimeInterval) -> SectorColor {
+        if let global = globalBestSectorTimes[sector], time < global {
+            return .purple
+        }
         guard let best = bestSectorTimes[sector] else { return .green }
         if time < best { return .green }
         return .yellow
