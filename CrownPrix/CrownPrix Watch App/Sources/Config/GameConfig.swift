@@ -31,4 +31,5 @@ enum GameConfig {
 
     // MARK: - Display
     static let targetFrameRate: Int = 30
+    static let displaySpeedScale: CGFloat = 350.0 / maxSpeed
 }

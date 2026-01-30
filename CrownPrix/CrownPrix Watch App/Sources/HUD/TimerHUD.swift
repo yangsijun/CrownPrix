@@ -47,7 +47,7 @@ final class TimerHUD {
         let millis = Int((elapsedTime.truncatingRemainder(dividingBy: 1)) * 1000)
         timerLabel.text = String(format: "%d:%02d.%03d", minutes, seconds, millis)
 
-        let kmh = Int(speed)
+        let kmh = Int(speed * GameConfig.displaySpeedScale)
         speedLabel.text = "\(kmh) km/h"
     }
 

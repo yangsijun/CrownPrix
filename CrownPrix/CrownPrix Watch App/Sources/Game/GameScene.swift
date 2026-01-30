@@ -39,7 +39,8 @@ final class GameScene: SKScene, ObservableObject {
         guard !didSetup, let trackData else { return }
         didSetup = true
 
-        let renderer = TrackRenderer(trackData: trackData)
+        let renderer = TrackRenderer(trackData: trackData, trackId: trackId ?? "")
+        renderer.curbNodes.forEach { addChild($0) }
         addChild(renderer.trackNode)
         addChild(renderer.startLineNode)
         trackRenderer = renderer
