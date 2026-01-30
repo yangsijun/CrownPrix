@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TrackSelectView: View {
     var onTrackSelected: (TrackMetadata) -> Void
+    var onBack: (() -> Void)? = nil
 
     private let tracks = TrackRegistry.sortedByName
     @State private var trackDataCache: [String: TrackData] = [:]
@@ -10,41 +11,56 @@ struct TrackSelectView: View {
         TabView {
             ForEach(tracks) { metadata in
                 trackCard(metadata)
-                    .onTapGesture { onTrackSelected(metadata) }
             }
         }
         .tabViewStyle(.verticalPage)
         .onAppear { loadAllTrackData() }
+        .toolbar {
+            if let onBack {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(action: onBack) { Image(systemName: "chevron.backward") }
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private func trackCard(_ metadata: TrackMetadata) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 8) {
             if let data = trackDataCache[metadata.id] {
                 trackOutline(data)
-                    .frame(width: 80, height: 80)
+                    .frame(width: 70, height: 70)
             } else {
-                Color.clear.frame(width: 80, height: 80)
+                Color.clear.frame(width: 70, height: 70)
             }
-
-            Text(metadata.displayName)
-                .font(.system(.footnote, weight: .semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            Text(metadata.country)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-
-            if let best = PersistenceManager.getBestTime(trackId: metadata.id) {
-                Text(TimeFormatter.format(best))
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.yellow)
-            } else {
-                Text("—")
+            
+            VStack(spacing: 4) {
+                MarqueeText(text: metadata.displayName, font: .system(.body, weight: .semibold))
+                    .padding(.horizontal)
+                
+                Text("\(metadata.flag)\(metadata.country)")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(.secondary)
+                
+                if let best = PersistenceManager.getBestTime(trackId: metadata.id) {
+                    Text(TimeFormatter.format(best))
+                        .font(.system(.footnote, design: .monospaced))
+                        .foregroundStyle(.yellow)
+                } else {
+                    Text("—")
+                        .font(.footnote)
+                        .foregroundStyle(.tertiary)
+                }
             }
+            
+            Spacer()
+            
+            Button(action: { onTrackSelected(metadata) }) {
+                Text("RACE")
+                    .font(.system(.caption2, weight: .bold))
+            }
+            .buttonStyle(.borderless)
+            .tint(.red)
         }
     }
 
@@ -66,20 +82,52 @@ struct TrackSelectView: View {
         let cx = (minX + maxX) / 2
         let cy = (minY + maxY) / 2
 
+        func project(_ pt: TrackPoint) -> CGPoint {
+            CGPoint(x: (pt.x - cx) * scale + 40, y: 40 - (pt.y - cy) * scale)
+        }
+
+        let startPos = project(points[0])
+        let arrowTarget = project(points[min(10, points.count - 1)])
+        let dx = arrowTarget.x - startPos.x
+        let dy = arrowTarget.y - startPos.y
+        let len = sqrt(dx * dx + dy * dy)
+        let nx = len > 0 ? dx / len : 1
+        let ny = len > 0 ? dy / len : 0
+        let arrowLen: CGFloat = 6
+        let arrowWidth: CGFloat = 3
+
+        let tipX = startPos.x + nx * arrowLen
+        let tipY = startPos.y + ny * arrowLen
+        let leftX = startPos.x - ny * arrowWidth
+        let leftY = startPos.y + nx * arrowWidth
+        let rightX = startPos.x + ny * arrowWidth
+        let rightY = startPos.y - nx * arrowWidth
+
         return AnyView(
-            Path { path in
-                for (i, pt) in sampled.enumerated() {
-                    let x = (pt.x - cx) * scale + 40
-                    let y = 40 - (pt.y - cy) * scale
-                    if i == 0 {
-                        path.move(to: CGPoint(x: x, y: y))
-                    } else {
-                        path.addLine(to: CGPoint(x: x, y: y))
+            ZStack {
+                Path { path in
+                    for (i, pt) in sampled.enumerated() {
+                        let p = project(pt)
+                        if i == 0 { path.move(to: p) }
+                        else { path.addLine(to: p) }
                     }
+                    path.closeSubpath()
                 }
-                path.closeSubpath()
+                .stroke(Color.gray, lineWidth: 1.5)
+
+                Path { path in
+                    path.move(to: CGPoint(x: tipX, y: tipY))
+                    path.addLine(to: CGPoint(x: leftX, y: leftY))
+                    path.addLine(to: CGPoint(x: rightX, y: rightY))
+                    path.closeSubpath()
+                }
+                .fill(Color.red)
+
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 4, height: 4)
+                    .position(startPos)
             }
-            .stroke(Color.gray, lineWidth: 1.5)
         )
     }
 

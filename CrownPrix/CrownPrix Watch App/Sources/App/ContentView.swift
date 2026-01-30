@@ -5,7 +5,7 @@ enum AppScreen {
     case trackSelect
     case race(trackId: String)
     case result(trackId: String, lapTime: TimeInterval)
-    case leaderboard(trackId: String, trackName: String)
+    case trackLeaderboard(trackId: String, trackName: String)
 }
 
 struct ContentView: View {
@@ -14,19 +14,29 @@ struct ContentView: View {
     var body: some View {
         switch screen {
         case .home:
-            HomeView {
-                screen = .trackSelect
+            TabView {
+                HomeView(onStart: { screen = .trackSelect })
+
+                RankingsListView { meta in
+                    screen = .trackLeaderboard(trackId: meta.id, trackName: meta.displayName)
+                }
             }
+            .tabViewStyle(.page)
 
         case .trackSelect:
-            TrackSelectView { metadata in
-                screen = .race(trackId: metadata.id)
+            NavigationStack {
+                TrackSelectView(
+                    onTrackSelected: { metadata in screen = .race(trackId: metadata.id) },
+                    onBack: { screen = .home }
+                )
             }
 
         case .race(let trackId):
-            RaceView(trackId: trackId) { lapTime in
-                screen = .result(trackId: trackId, lapTime: lapTime)
-            }
+            RaceView(
+                trackId: trackId,
+                onLapComplete: { lapTime in screen = .result(trackId: trackId, lapTime: lapTime) },
+                onDNF: { screen = .trackSelect }
+            )
 
         case .result(let trackId, let lapTime):
             ResultView(
@@ -36,7 +46,7 @@ struct ContentView: View {
                 onBackToTracks: { screen = .trackSelect },
                 onShowLeaderboard: {
                     if let track = TrackRegistry.track(byId: trackId) {
-                        screen = .leaderboard(trackId: trackId, trackName: track.displayName)
+                        screen = .trackLeaderboard(trackId: trackId, trackName: track.displayName)
                     }
                 }
             )
@@ -44,9 +54,15 @@ struct ContentView: View {
                 GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
             }
 
-        case .leaderboard(let trackId, let trackName):
+        case .trackLeaderboard(let trackId, let trackName):
             if let track = TrackRegistry.track(byId: trackId) {
-                LeaderboardView(leaderboardId: track.leaderboardId, trackName: trackName)
+                NavigationStack {
+                    LeaderboardView(
+                        leaderboardId: track.leaderboardId,
+                        trackName: trackName,
+                        onBack: { screen = .home }
+                    )
+                }
             }
         }
     }

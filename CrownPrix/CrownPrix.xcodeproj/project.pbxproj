@@ -331,7 +331,7 @@
 		ED240F972F2BAC42000D0EFA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "CrownPrix Watch App/CrownPrix Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -367,7 +367,7 @@
 		ED240F982F2BAC42000D0EFA /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "CrownPrix Watch App/CrownPrix Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
