@@ -10,7 +10,7 @@ struct HomeView: View {
             Text("Crown Prix")
                 .font(.system(.title, design: .rounded, weight: .bold))
 
-            Text("F1 Time Attack")
+            Text("The Tiniest Race on Your Wrist")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
