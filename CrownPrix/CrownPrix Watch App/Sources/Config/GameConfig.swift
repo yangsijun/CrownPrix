@@ -14,6 +14,7 @@ enum GameConfig {
 
     // MARK: - Track (game units at targetTrackSize=2000)
     static let roadHalfWidth: CGFloat = 16.0
+    static let collisionHalfWidth: CGFloat = 18.0
     static let targetTrackSize: CGFloat = 2000.0
     static let trackPointCount: Int = 800
     static let wallBounceDistance: CGFloat = 2.0
@@ -23,6 +24,7 @@ enum GameConfig {
     static let cameraSmoothSpeed: CGFloat = 8.0
 
     // MARK: - Collision & Lap
+    static let segmentSearchWindow: Int = 40
     static let lapCrossSegmentWindow: Int = 15
 
     // MARK: - Timing

@@ -29,6 +29,7 @@ enum TrackPreprocessor {
             targetPointCount: GameConfig.trackPointCount
         )
 
+        sampled = smooth(points: sampled, iterations: 3)
         sampled = normalize(points: sampled)
 
         if metadata.racingDirectionReversed {
@@ -170,6 +171,31 @@ enum TrackPreprocessor {
         return points.map { pt in
             TrackPoint(x: (pt.x - centerX) * scale, y: (pt.y - centerY) * scale)
         }
+    }
+
+    // MARK: - Smoothing (circular moving average)
+
+    private static func smooth(points: [TrackPoint], iterations: Int, windowRadius: Int = 2) -> [TrackPoint] {
+        guard points.count > windowRadius * 2 else { return points }
+        var pts = points
+        let n = pts.count
+        for _ in 0..<iterations {
+            var smoothed = [TrackPoint]()
+            smoothed.reserveCapacity(n)
+            for i in 0..<n {
+                var sx: CGFloat = 0
+                var sy: CGFloat = 0
+                let count = windowRadius * 2 + 1
+                for j in -windowRadius...windowRadius {
+                    let idx = (i + j + n) % n
+                    sx += pts[idx].x
+                    sy += pts[idx].y
+                }
+                smoothed.append(TrackPoint(x: sx / CGFloat(count), y: sy / CGFloat(count)))
+            }
+            pts = smoothed
+        }
+        return pts
     }
 
     // MARK: - Helpers

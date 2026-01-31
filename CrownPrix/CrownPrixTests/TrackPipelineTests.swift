@@ -41,7 +41,7 @@ final class TrackPipelineTests: XCTestCase {
         }
         let content = try String(contentsOf: url, encoding: .utf8)
         let dAttributes = extractPathDAttributes(from: content)
-        XCTAssertEqual(dAttributes.count, 2, "Suzuka should have exactly 2 <path> elements")
+        XCTAssertEqual(dAttributes.count, 1, "Suzuka (coggs) should have 1 <path> element")
         let trackData = try TrackPreprocessor.preprocessTrack(svgContent: content, metadata: metadata)
         XCTAssertFalse(trackData.points.isEmpty)
     }
@@ -154,8 +154,8 @@ final class TrackPipelineTests: XCTestCase {
         }
     }
 
-    func testTrackRegistryHas22Entries() {
-        XCTAssertEqual(TrackRegistry.allTracks.count, 22)
+    func testTrackRegistryHas24Entries() {
+        XCTAssertEqual(TrackRegistry.allTracks.count, 24)
     }
 
     func testAllTrackIdsUnique() {
@@ -191,7 +191,7 @@ final class TrackPipelineTests: XCTestCase {
             try jsonData.write(to: outputURL)
             writtenCount += 1
         }
-        XCTAssertEqual(writtenCount, 22)
+        XCTAssertEqual(writtenCount, 24)
     }
 
     private func makeCircle(count: Int, radius: CGFloat) -> [CGPoint] {

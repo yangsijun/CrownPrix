@@ -17,8 +17,10 @@ final class CollisionSystem {
 
         var bestIndex = currentSegmentIndex
         var bestDist = CGFloat.greatestFiniteMagnitude
+        let window = GameConfig.segmentSearchWindow
 
-        for i in 0..<count {
+        for offset in -window...window {
+            let i = (currentSegmentIndex + offset + count) % count
             let j = (i + 1) % count
             let segA = CGPoint(x: trackData.points[i].x, y: trackData.points[i].y)
             let segB = CGPoint(x: trackData.points[j].x, y: trackData.points[j].y)
@@ -37,7 +39,7 @@ final class CollisionSystem {
         let segB = CGPoint(x: trackData.points[segJ].x, y: trackData.points[segJ].y)
         let nearest = Self.perpendicularDistance(point: carPosition, segA: segA, segB: segB)
 
-        if nearest.distance > GameConfig.roadHalfWidth && !physics.isRecovering {
+        if nearest.distance > GameConfig.collisionHalfWidth && !physics.isRecovering {
             let dx = nearest.closest.x - carPosition.x
             let dy = nearest.closest.y - carPosition.y
             let len = sqrt(dx * dx + dy * dy)
@@ -45,7 +47,7 @@ final class CollisionSystem {
 
             let pushDirX = dx / len
             let pushDirY = dy / len
-            let penetration = nearest.distance - GameConfig.roadHalfWidth
+            let penetration = nearest.distance - GameConfig.collisionHalfWidth
 
             let newX = carPosition.x + pushDirX * (penetration + GameConfig.wallBounceDistance)
             let newY = carPosition.y + pushDirY * (penetration + GameConfig.wallBounceDistance)
@@ -81,7 +83,7 @@ final class CollisionSystem {
             )
 
             onWallCollision?()
-        } else if nearest.distance <= GameConfig.roadHalfWidth * 0.9 {
+        } else if nearest.distance <= GameConfig.collisionHalfWidth * 0.9 {
             physics.isRecovering = false
         }
     }
