@@ -7,11 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA240F0D2F2C0000000D0EFA /* CrownPrix Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = ED240F8B2F2BAC41000D0EFA /* CrownPrix Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		ED240FE42F2BFEBC000D0EFA /* SVGPath in Frameworks */ = {isa = PBXBuildFile; productRef = ED240FAD2F2BAC43000D0EFA /* SVGPath */; };
 		ED240FE52F2BFEBC000D0EFA /* SVGPath in Frameworks */ = {isa = PBXBuildFile; productRef = ED240FAE2F2BAC43000D0EFA /* SVGPath */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		AA240F0B2F2C0000000D0EFA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ED240F832F2BAC41000D0EFA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = ED240F8A2F2BAC41000D0EFA;
+			remoteInfo = "CrownPrix Watch App";
+		};
 		ED240FAB2F2BAC43000D0EFA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = ED240F832F2BAC41000D0EFA /* Project object */;
@@ -21,14 +29,47 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		AA240F062F2C0000000D0EFA /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				AA240F0D2F2C0000000D0EFA /* CrownPrix Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		AA240F012F2C0000000D0EFA /* CrownPrix.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CrownPrix.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED240F8B2F2BAC41000D0EFA /* CrownPrix Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "CrownPrix Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED240FA22F2BAC43000D0EFA /* CrownPrixTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CrownPrixTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		ED87FA842F2E6B1C00AB9AB1 /* Exceptions for "CrownPrix Watch App" folder in "CrownPrix" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/AppIcon/CrownPrixIcon.icon,
+			);
+			target = AA240F072F2C0000000D0EFA /* CrownPrix */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		AA240F022F2C0000000D0EFA /* CrownPrix */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CrownPrix;
+			sourceTree = "<group>";
+		};
 		ED240F8D2F2BAC41000D0EFA /* CrownPrix Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				ED87FA842F2E6B1C00AB9AB1 /* Exceptions for "CrownPrix Watch App" folder in "CrownPrix" target */,
+			);
 			path = "CrownPrix Watch App";
 			sourceTree = "<group>";
 		};
@@ -40,6 +81,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		AA240F042F2C0000000D0EFA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ED240F882F2BAC41000D0EFA /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -62,6 +110,7 @@
 		ED240F822F2BAC41000D0EFA = {
 			isa = PBXGroup;
 			children = (
+				AA240F022F2C0000000D0EFA /* CrownPrix */,
 				ED240F8D2F2BAC41000D0EFA /* CrownPrix Watch App */,
 				ED240FA32F2BAC43000D0EFA /* CrownPrixTests */,
 				ED240F8C2F2BAC41000D0EFA /* Products */,
@@ -71,6 +120,7 @@
 		ED240F8C2F2BAC41000D0EFA /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				AA240F012F2C0000000D0EFA /* CrownPrix.app */,
 				ED240F8B2F2BAC41000D0EFA /* CrownPrix Watch App.app */,
 				ED240FA22F2BAC43000D0EFA /* CrownPrixTests.xctest */,
 			);
@@ -80,6 +130,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA240F072F2C0000000D0EFA /* CrownPrix */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA240F0A2F2C0000000D0EFA /* Build configuration list for PBXNativeTarget "CrownPrix" */;
+			buildPhases = (
+				AA240F032F2C0000000D0EFA /* Sources */,
+				AA240F042F2C0000000D0EFA /* Frameworks */,
+				AA240F052F2C0000000D0EFA /* Resources */,
+				AA240F062F2C0000000D0EFA /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA240F0C2F2C0000000D0EFA /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AA240F022F2C0000000D0EFA /* CrownPrix */,
+			);
+			name = CrownPrix;
+			productName = CrownPrix;
+			productReference = AA240F012F2C0000000D0EFA /* CrownPrix.app */;
+			productType = "com.apple.product-type.application";
+		};
 		ED240F8A2F2BAC41000D0EFA /* CrownPrix Watch App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = ED240F962F2BAC42000D0EFA /* Build configuration list for PBXNativeTarget "CrownPrix Watch App" */;
@@ -137,6 +209,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					AA240F072F2C0000000D0EFA = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					ED240F8A2F2BAC41000D0EFA = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -163,6 +238,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				AA240F072F2C0000000D0EFA /* CrownPrix */,
 				ED240F8A2F2BAC41000D0EFA /* CrownPrix Watch App */,
 				ED240FA12F2BAC43000D0EFA /* CrownPrixTests */,
 			);
@@ -170,6 +246,13 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		AA240F052F2C0000000D0EFA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ED240F892F2BAC41000D0EFA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -187,6 +270,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		AA240F032F2C0000000D0EFA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		ED240F872F2BAC41000D0EFA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -204,6 +294,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		AA240F0C2F2C0000000D0EFA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = ED240F8A2F2BAC41000D0EFA /* CrownPrix Watch App */;
+			targetProxy = AA240F0B2F2C0000000D0EFA /* PBXContainerItemProxy */;
+		};
 		ED240FAA2F2BAC43000D0EFA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = ED240F8A2F2BAC41000D0EFA /* CrownPrix Watch App */;
@@ -212,6 +307,75 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		AA240F082F2C0000000D0EFA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9ZMW52M7L5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Crown Prix";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.racing-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.sijun.crownprix;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA240F092F2C0000000D0EFA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9ZMW52M7L5;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Crown Prix";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.racing-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.sijun.crownprix;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		ED240F942F2BAC42000D0EFA /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -340,17 +504,19 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Crown Prix";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.crownprix;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = dev.sijun.crownprix;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.crownprix.watchapp;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.sijun.crownprix.watchapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -360,7 +526,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
 		};
@@ -376,17 +542,19 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Crown Prix";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.crownprix;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = dev.sijun.crownprix;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.crownprix.watchapp;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.sijun.crownprix.watchapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -397,7 +565,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
-				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
 		};
@@ -449,6 +617,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		AA240F0A2F2C0000000D0EFA /* Build configuration list for PBXNativeTarget "CrownPrix" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA240F082F2C0000000D0EFA /* Debug */,
+				AA240F092F2C0000000D0EFA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		ED240F862F2BAC41000D0EFA /* Build configuration list for PBXProject "CrownPrix" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
