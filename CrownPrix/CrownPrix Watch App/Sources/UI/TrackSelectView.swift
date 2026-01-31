@@ -6,19 +6,35 @@ struct TrackSelectView: View {
 
     private let tracks = TrackRegistry.sortedByName
     @State private var trackDataCache: [String: TrackData] = [:]
+    @State private var selectedTrackId: String?
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTrackId) {
             ForEach(tracks) { metadata in
                 trackCard(metadata)
+                    .tag(Optional(metadata.id))
             }
         }
         .tabViewStyle(.verticalPage)
-        .onAppear { loadAllTrackData() }
+        .onAppear {
+            if selectedTrackId == nil { selectedTrackId = tracks.first?.id }
+            loadAllTrackData()
+        }
         .toolbar {
             if let onBack {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: onBack) { Image(systemName: "chevron.backward") }
+                }
+            }
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    if let id = selectedTrackId, let meta = TrackRegistry.track(byId: id) {
+                        onTrackSelected(meta)
+                    }
+                } label: {
+                    Text("RACE")
+                        .foregroundStyle(.red)
+                        .bold()
                 }
             }
         }
@@ -52,15 +68,6 @@ struct TrackSelectView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            
-            Spacer()
-            
-            Button(action: { onTrackSelected(metadata) }) {
-                Text("RACE")
-                    .font(.system(.caption2, weight: .bold))
-            }
-            .buttonStyle(.borderless)
-            .tint(.red)
         }
     }
 
@@ -138,4 +145,8 @@ struct TrackSelectView: View {
             }
         }
     }
+}
+
+#Preview {
+    TrackSelectView(onTrackSelected: { _ in })
 }
