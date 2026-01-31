@@ -1,5 +1,5 @@
 import Combine
-import GameKit
+import Foundation
 
 struct LeaderboardEntry: Identifiable {
     let id = UUID()
@@ -7,6 +7,14 @@ struct LeaderboardEntry: Identifiable {
     let playerName: String
     let lapTime: TimeInterval
     let isLocalPlayer: Bool
+
+    static func from(_ dict: [String: Any]) -> LeaderboardEntry? {
+        guard let rank = dict["rank"] as? Int,
+              let name = dict["playerName"] as? String,
+              let lap = dict["lapTime"] as? Double,
+              let isLocal = dict["isLocalPlayer"] as? Bool else { return nil }
+        return LeaderboardEntry(rank: rank, playerName: name, lapTime: lap, isLocalPlayer: isLocal)
+    }
 }
 
 struct LeaderboardData {
@@ -18,36 +26,27 @@ final class GameCenterManager: ObservableObject {
     static let shared = GameCenterManager()
     @Published var isAuthenticated: Bool = false
 
-    func authenticate() {
-        guard !isRunningTests else { return }
-        GKLocalPlayer.local.authenticateHandler = { [weak self] (error: Error?) in
-            Task { @MainActor in
-                if let error = error {
-                    print("Game Center auth failed: \(error.localizedDescription)")
-                    return
-                }
-                self?.isAuthenticated = GKLocalPlayer.local.isAuthenticated
-                if GKLocalPlayer.local.isAuthenticated {
-                    print("Game Center: \(GKLocalPlayer.local.displayName)")
-                }
-            }
-        }
-    }
-
-    private var isRunningTests: Bool {
-        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
-    }
-
     func submitScore(trackId: String, lapTime: TimeInterval) {
-        guard isAuthenticated else { return }
-        guard let leaderboardId = TrackRegistry.track(byId: trackId)?.leaderboardId else { return }
-        let score = Int(lapTime * 1000)
-        Task {
-            do {
-                try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
-            } catch {
-                print("Score submission failed: \(error.localizedDescription)")
-            }
+        WatchConnectivityManager.shared.transferScore(trackId: trackId, lapTime: lapTime)
+    }
+
+    func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
+        WatchConnectivityManager.shared.transferSectorTimes(trackId: trackId, times: times)
+    }
+
+    func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
+        try await withCheckedThrowingContinuation { continuation in
+            let message: [String: Any] = ["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount]
+            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
+                var local: LeaderboardEntry?
+                if let localDict = reply["localPlayer"] as? [String: Any] {
+                    local = LeaderboardEntry.from(localDict)
+                }
+                continuation.resume(returning: LeaderboardData(topEntries: entries, localPlayer: local))
+            }, errorHandler: { error in
+                continuation.resume(throwing: error)
+            })
         }
     }
 
@@ -56,63 +55,19 @@ final class GameCenterManager: ObservableObject {
         return data.topEntries
     }
 
-    func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
-        let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
-        guard let leaderboard = leaderboards.first else {
-            return LeaderboardData(topEntries: [], localPlayer: nil)
-        }
-        let (localEntry, entries, _) = try await leaderboard.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
-        let topEntries = entries.map { entry in
-            LeaderboardEntry(
-                rank: entry.rank,
-                playerName: entry.player.displayName,
-                lapTime: TimeInterval(entry.score) / 1000.0,
-                isLocalPlayer: entry.player == GKLocalPlayer.local
-            )
-        }
-        let local: LeaderboardEntry? = localEntry.map {
-            LeaderboardEntry(
-                rank: $0.rank,
-                playerName: $0.player.displayName,
-                lapTime: TimeInterval($0.score) / 1000.0,
-                isLocalPlayer: true
-            )
-        }
-        return LeaderboardData(topEntries: topEntries, localPlayer: local)
-    }
-
-    func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
-        guard isAuthenticated else { return }
-        Task {
-            for (i, time) in times.enumerated() {
-                guard let t = time else { continue }
-                let leaderboardId = "cp.sector.\(trackId).\(i)"
-                let score = Int(t * 1000)
-                do {
-                    try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
-                } catch {
-                    print("Sector score submission failed: \(error.localizedDescription)")
-                }
-            }
-        }
-    }
-
     func loadGlobalBestSectorTimes(trackId: String) async -> [TimeInterval?] {
-        guard isAuthenticated else { return [nil, nil, nil] }
-        var result: [TimeInterval?] = [nil, nil, nil]
-        for i in 0..<3 {
-            let leaderboardId = "cp.sector.\(trackId).\(i)"
-            do {
-                let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
-                guard let lb = leaderboards.first else { continue }
-                let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
-                if let top = entries.first {
-                    result[i] = TimeInterval(top.score) / 1000.0
-                }
-            } catch {
-                continue
-            }
+        await withCheckedContinuation { continuation in
+            let message: [String: Any] = ["type": "loadBestSectorTimes", "trackId": trackId]
+            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                let times = (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
+                continuation.resume(returning: times)
+            }, errorHandler: { _ in
+                continuation.resume(returning: [nil, nil, nil])
+            })
         }
-        return result
+    }
+
+    private var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
 }

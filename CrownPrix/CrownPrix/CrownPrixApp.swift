@@ -2,12 +2,16 @@ import SwiftUI
 
 @main
 struct CrownPrixApp: App {
+    @StateObject private var gcManager = GameCenterManager.shared
+
     var body: some Scene {
         WindowGroup {
-            Text("Open CrownPrix on your Apple Watch")
-                .font(.headline)
-                .multilineTextAlignment(.center)
-                .padding()
+            ContentView()
+                .environmentObject(gcManager)
+                .onAppear {
+                    PhoneConnectivityManager.shared.activate()
+                    GameCenterManager.shared.authenticate()
+                }
         }
     }
 }
