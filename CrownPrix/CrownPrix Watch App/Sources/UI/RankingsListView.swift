@@ -53,3 +53,7 @@ struct RankingsListView: View {
         }
     }
 }
+
+#Preview {
+    RankingsListView(onSelectTrack: { _ in })
+}

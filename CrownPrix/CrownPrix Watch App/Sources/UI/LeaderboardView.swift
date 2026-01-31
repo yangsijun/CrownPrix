@@ -88,3 +88,7 @@ struct LeaderboardView: View {
         }
     }
 }
+
+#Preview {
+    LeaderboardView(leaderboardId: "crownprix.albertpark", trackName: "Albert Park")
+}

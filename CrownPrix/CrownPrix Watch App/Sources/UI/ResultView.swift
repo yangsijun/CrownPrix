@@ -66,3 +66,12 @@ struct ResultView: View {
         }
     }
 }
+
+#Preview {
+    ResultView(
+        trackId: "albertpark",
+        lapTime: 83.456,
+        onRetry: {},
+        onBackToTracks: {}
+    )
+}

@@ -72,3 +72,8 @@ struct MarqueeText: View {
         }
     }
 }
+
+#Preview {
+    MarqueeText(text: "Circuit de Monaco — Grand Prix", font: .system(.body, weight: .semibold))
+        .padding()
+}

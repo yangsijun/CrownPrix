@@ -30,3 +30,7 @@ struct HomeView: View {
         }
     }
 }
+
+#Preview {
+    HomeView(onStart: {})
+}
