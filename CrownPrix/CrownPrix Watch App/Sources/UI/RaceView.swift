@@ -7,9 +7,7 @@ struct RaceView: View {
     var onDNF: (() -> Void)? = nil
 
     @StateObject private var scene: GameScene
-    @State private var showDNFConfirm = false
-    @State private var showToolbar = false
-    @State private var hideTask: Task<Void, Never>?
+    @State private var showRetire = false
 
     init(trackId: String, onLapComplete: @escaping (TimeInterval) -> Void, onDNF: (() -> Void)? = nil) {
         self.trackId = trackId
@@ -42,42 +40,17 @@ struct RaceView: View {
                 scene.onLapComplete = onLapComplete
             }
             .onLongPressGesture(minimumDuration: 0.5) {
-                revealToolbar()
+                scene.pauseRace()
+                showRetire = true
             }
-            .overlay(alignment: .top) {
-                if showToolbar, onDNF != nil {
-                    Button(action: { showDNFConfirm = true }) {
-                        Text("DNF")
-                            .font(.system(.footnote, weight: .bold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                Capsule()
-                                    .fill(.red)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, 4)
-                    .transition(.opacity)
-                }
-            }
-            .confirmationDialog("Retire?", isPresented: $showDNFConfirm) {
+            .confirmationDialog("Retire?", isPresented: $showRetire) {
                 Button("Retire", role: .destructive) { onDNF?() }
-                Button("Continue", role: .cancel) { }
+                Button("Continue", role: .cancel) { scene.resumeRace() }
             }
             ._statusBarHidden()
     }
+}
 
-    private func revealToolbar() {
-        hideTask?.cancel()
-        withAnimation { showToolbar = true }
-        hideTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled else { return }
-            await MainActor.run {
-                withAnimation { showToolbar = false }
-            }
-        }
-    }
+#Preview {
+    RaceView(trackId: "albertpark", onLapComplete: { _ in })
 }

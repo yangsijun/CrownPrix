@@ -24,6 +24,11 @@ final class GameScene: SKScene, ObservableObject {
     private var lastUpdateTime: TimeInterval = 0
     private var didSetup = false
 
+    private var resumeLabel: SKLabelNode?
+    private var resumeTimer: TimeInterval = 0
+    private var resumeLastCount: Int = -1
+    private(set) var isResuming = false
+
     func configure(trackId: String, trackData: TrackData) {
         self.trackId = trackId
         self.trackData = trackData
@@ -118,6 +123,29 @@ final class GameScene: SKScene, ObservableObject {
         wrongWayIndicator = wrongWay
     }
 
+    func pauseRace() {
+        isPaused = true
+    }
+
+    func resumeRace() {
+        if resumeLabel == nil {
+            let label = SKLabelNode(fontNamed: ".AppleSystemUIFontRounded-Bold")
+            label.fontSize = 60
+            label.fontColor = .white
+            label.horizontalAlignmentMode = .center
+            label.verticalAlignmentMode = .center
+            label.zPosition = 300
+            cameraController?.uiNode.addChild(label)
+            resumeLabel = label
+        }
+        resumeLabel?.text = "3"
+        resumeLabel?.isHidden = false
+        resumeTimer = 0
+        resumeLastCount = -1
+        isResuming = true
+        isPaused = false
+    }
+
     override func update(_ currentTime: TimeInterval) {
         setupIfNeeded()
 
@@ -129,6 +157,24 @@ final class GameScene: SKScene, ObservableObject {
         guard dt < 1.0, let physics = physicsEngine, let collision = collisionSystem, let lap = lapDetector else { return }
 
         if raceCountdown?.isCountingDown == true { return }
+
+        if isResuming {
+            resumeTimer += dt
+            let count = Int(resumeTimer)
+            if count != resumeLastCount {
+                resumeLastCount = count
+                switch count {
+                case 0: resumeLabel?.text = "3"; HapticsManager.playStartLight()
+                case 1: resumeLabel?.text = "2"; HapticsManager.playStartLight()
+                case 2: resumeLabel?.text = "1"; HapticsManager.playStartLight()
+                default:
+                    resumeLabel?.isHidden = true
+                    isResuming = false
+                    HapticsManager.playStartGo()
+                }
+            }
+            return
+        }
 
         physics.update(crownRotation: crownRotation, deltaTime: dt)
 
