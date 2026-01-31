@@ -18,8 +18,8 @@ struct ContentView: View {
             TabView {
                 HomeView(onStart: { screen = .trackSelect })
 
-                RankingsListView { meta in
-                    screen = .trackLeaderboard(trackId: meta.id, trackName: meta.displayName)
+                NavigationStack {
+                    RankingsListView()
                 }
             }
             .tabViewStyle(.page)

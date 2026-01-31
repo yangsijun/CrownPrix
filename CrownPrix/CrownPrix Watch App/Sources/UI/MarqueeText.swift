@@ -5,6 +5,7 @@ struct MarqueeText: View {
     var font: Font = .caption
     var speed: Double = 30
     var gap: CGFloat = 40
+    var staticAlignment: Alignment = .center
 
     @State private var textWidth: CGFloat = 0
     @State private var containerWidth: CGFloat = 0
@@ -23,7 +24,7 @@ struct MarqueeText: View {
                 .offset(x: offset)
             } else {
                 label
-                    .frame(width: geo.size.width, alignment: .center)
+                    .frame(width: geo.size.width, alignment: staticAlignment)
             }
         }
         .frame(height: 18)

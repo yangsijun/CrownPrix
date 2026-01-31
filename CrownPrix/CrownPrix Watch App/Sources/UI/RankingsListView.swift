@@ -1,29 +1,37 @@
 import SwiftUI
 
 struct RankingsListView: View {
-    var onSelectTrack: (TrackMetadata) -> Void
-
     private let tracks = TrackRegistry.sortedByName
     @State private var localEntries: [String: LeaderboardEntry] = [:]
 
     var body: some View {
         List(tracks) { meta in
-            Button { onSelectTrack(meta) } label: {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(meta.displayName)
-                            .font(.system(.caption, weight: .medium))
-                            .lineLimit(1)
+            NavigationLink {
+                LeaderboardView(
+                    leaderboardId: meta.leaderboardId,
+                    trackName: meta.displayName
+                )
+            } label: {
+                VStack(alignment: .leading, spacing: 0) {
+                    MarqueeText(text: meta.displayName, font: .system(.caption, weight: .medium), staticAlignment: .leading)
+                    HStack {
                         Text("\(meta.country) \(meta.flag)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
+                        Spacer()
                     }
-                    Spacer()
                     if let entry = localEntries[meta.id] {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("#\(entry.rank)")
-                                .font(.system(.caption2, design: .monospaced, weight: .bold))
-                                .foregroundStyle(.yellow)
+                        HStack(spacing: 8) {
+                            Spacer()
+                            Group {
+                                if entry.rank == 0 {
+                                    Text("N/A")
+                                } else {
+                                    Text("#\(entry.rank)")
+                                }
+                            }
+                            .font(.system(.caption2, design: .monospaced, weight: .bold))
+                            .foregroundStyle(.yellow)
                             Text(TimeFormatter.format(entry.lapTime))
                                 .font(.system(.caption2, design: .monospaced))
                                 .foregroundStyle(.secondary)
@@ -55,5 +63,7 @@ struct RankingsListView: View {
 }
 
 #Preview {
-    RankingsListView(onSelectTrack: { _ in })
+    NavigationStack {
+        RankingsListView()
+    }
 }
