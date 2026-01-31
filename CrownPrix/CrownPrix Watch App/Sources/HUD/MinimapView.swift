@@ -55,15 +55,16 @@ final class MinimapView {
         trackOutline.fillColor = .clear
         containerNode.addChild(trackOutline)
 
+        let startPt = trackPoints[0]
+        let smx = (startPt.x - centerX) * minimapScale
+        let smy = (startPt.y - centerY) * minimapScale
+
         carDot = SKShapeNode(circleOfRadius: 4)
         carDot.fillColor = .red
         carDot.strokeColor = .clear
         carDot.zPosition = 1
+        carDot.position = CGPoint(x: smx, y: smy)
         containerNode.addChild(carDot)
-
-        let startPt = trackPoints[0]
-        let smx = (startPt.x - centerX) * minimapScale
-        let smy = (startPt.y - centerY) * minimapScale
         let linePath = CGMutablePath()
         linePath.move(to: CGPoint(x: smx - 3, y: smy))
         linePath.addLine(to: CGPoint(x: smx + 3, y: smy))

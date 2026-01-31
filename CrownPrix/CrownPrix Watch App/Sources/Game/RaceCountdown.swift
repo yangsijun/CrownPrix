@@ -33,7 +33,7 @@ final class RaceCountdown {
     }
 
     func attachTo(camera: SKNode) {
-        containerNode.position = .zero
+        containerNode.position = CGPoint(x: 0, y: 60)
         camera.addChild(containerNode)
     }
 
