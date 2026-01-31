@@ -311,6 +311,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
+				CODE_SIGN_ENTITLEMENTS = CrownPrix/CrownPrix.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9ZMW52M7L5;
@@ -345,6 +346,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
+				CODE_SIGN_ENTITLEMENTS = CrownPrix/CrownPrix.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9ZMW52M7L5;
