@@ -3,8 +3,9 @@ import SwiftUI
 struct TrackSelectView: View {
     var onTrackSelected: (TrackMetadata) -> Void
     var onBack: (() -> Void)? = nil
+    var initialTrackId: String? = nil
 
-    private let tracks = TrackRegistry.sortedByName
+    private let tracks = TrackRegistry.allTracks
     @State private var trackDataCache: [String: TrackData] = [:]
     @State private var selectedTrackId: String?
 
@@ -17,7 +18,7 @@ struct TrackSelectView: View {
         }
         .tabViewStyle(.verticalPage)
         .onAppear {
-            if selectedTrackId == nil { selectedTrackId = tracks.first?.id }
+            if selectedTrackId == nil { selectedTrackId = initialTrackId ?? tracks.first?.id }
             loadAllTrackData()
         }
         .toolbar {

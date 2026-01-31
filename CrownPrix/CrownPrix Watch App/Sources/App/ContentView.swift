@@ -10,6 +10,7 @@ enum AppScreen {
 
 struct ContentView: View {
     @State private var screen: AppScreen = .home
+    @State private var lastTrackId: String?
 
     var body: some View {
         switch screen {
@@ -26,8 +27,12 @@ struct ContentView: View {
         case .trackSelect:
             NavigationStack {
                 TrackSelectView(
-                    onTrackSelected: { metadata in screen = .race(trackId: metadata.id) },
-                    onBack: { screen = .home }
+                    onTrackSelected: { metadata in
+                        lastTrackId = metadata.id
+                        screen = .race(trackId: metadata.id)
+                    },
+                    onBack: { screen = .home },
+                    initialTrackId: lastTrackId
                 )
             }
 
