@@ -8,6 +8,7 @@ final class PhysicsEngine {
     var isRecovering: Bool = false
     private var previousCrownRotation: Double = 0
     private var hasPreviousCrown: Bool = false
+    private var smoothedDelta: CGFloat = 0
 
     init(startPosition: CGPoint, startHeading: CGFloat) {
         self.carPosition = startPosition
@@ -29,11 +30,15 @@ final class PhysicsEngine {
         if delta > 1.0 { delta -= 2.0 }
         if delta < -1.0 { delta += 2.0 }
 
-        carHeading -= CGFloat(delta) * GameConfig.maxTurnRate
+        let smoothFactor = min(dt * GameConfig.steeringSmoothSpeed, 1.0)
+        smoothedDelta += (CGFloat(delta) - smoothedDelta) * smoothFactor
+        carHeading -= smoothedDelta * GameConfig.maxTurnRate
 
-        let turnSpeed = dt > 0.0001 ? abs(CGFloat(delta)) / dt : 0
-        let normalizedTurn = min(turnSpeed / GameConfig.maxTurnRate, 1.0)
-        let targetSpeed = GameConfig.minSpeedAtMaxSteer + (1.0 - normalizedTurn) * (GameConfig.maxSpeed - GameConfig.minSpeedAtMaxSteer)
+        let turnSpeed = dt > 0.0001 ? abs(smoothedDelta) / dt : 0
+        let normalizedTurn = min(turnSpeed / GameConfig.maxCrownInputRate, 1.0)
+        let effective = max(0, (normalizedTurn - GameConfig.steeringDeadZone) / (1.0 - GameConfig.steeringDeadZone))
+        let curved = effective * effective * effective
+        let targetSpeed = GameConfig.minSpeedAtMaxSteer + (1.0 - curved) * (GameConfig.maxSpeed - GameConfig.minSpeedAtMaxSteer)
 
         if currentSpeed < targetSpeed {
             currentSpeed = min(currentSpeed + GameConfig.accelerationRate * dt, targetSpeed)

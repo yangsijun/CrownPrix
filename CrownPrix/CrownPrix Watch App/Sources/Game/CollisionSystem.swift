@@ -39,7 +39,7 @@ final class CollisionSystem {
         let segB = CGPoint(x: trackData.points[segJ].x, y: trackData.points[segJ].y)
         let nearest = Self.perpendicularDistance(point: carPosition, segA: segA, segB: segB)
 
-        if nearest.distance > GameConfig.collisionHalfWidth && !physics.isRecovering {
+        if nearest.distance > GameConfig.collisionHalfWidth {
             let dx = nearest.closest.x - carPosition.x
             let dy = nearest.closest.y - carPosition.y
             let len = sqrt(dx * dx + dy * dy)
@@ -53,36 +53,40 @@ final class CollisionSystem {
             let newY = carPosition.y + pushDirY * (penetration + GameConfig.wallBounceDistance)
             let correctedPosition = CGPoint(x: newX, y: newY)
 
-            let vx = cos(physics.carHeading) * physics.currentSpeed
-            let vy = sin(physics.carHeading) * physics.currentSpeed
+            if !physics.isRecovering {
+                let vx = cos(physics.carHeading) * physics.currentSpeed
+                let vy = sin(physics.carHeading) * physics.currentSpeed
 
-            let outwardDot = vx * (-pushDirX) + vy * (-pushDirY)
-            var correctedVx = vx
-            var correctedVy = vy
-            if outwardDot > 0 {
-                correctedVx += pushDirX * outwardDot
-                correctedVy += pushDirY * outwardDot
-            }
+                let outwardDot = vx * (-pushDirX) + vy * (-pushDirY)
+                var correctedVx = vx
+                var correctedVy = vy
+                if outwardDot > 0 {
+                    correctedVx += pushDirX * outwardDot
+                    correctedVy += pushDirY * outwardDot
+                }
 
-            let newSpeed = physics.currentSpeed * GameConfig.wallSlowdownFactor
+                let newSpeed = physics.currentSpeed * GameConfig.wallSlowdownFactor
 
-            let magSq = correctedVx * correctedVx + correctedVy * correctedVy
-            let correctedHeading: CGFloat
-            if magSq < 0.0001 {
-                let tx = segB.x - segA.x
-                let ty = segB.y - segA.y
-                correctedHeading = atan2(ty, tx)
+                let magSq = correctedVx * correctedVx + correctedVy * correctedVy
+                let correctedHeading: CGFloat
+                if magSq < 0.0001 {
+                    let tx = segB.x - segA.x
+                    let ty = segB.y - segA.y
+                    correctedHeading = atan2(ty, tx)
+                } else {
+                    correctedHeading = atan2(correctedVy, correctedVx)
+                }
+
+                physics.applyWallHit(
+                    correctedPosition: correctedPosition,
+                    correctedHeading: correctedHeading,
+                    correctedSpeed: newSpeed
+                )
+
+                onWallCollision?()
             } else {
-                correctedHeading = atan2(correctedVy, correctedVx)
+                physics.carPosition = correctedPosition
             }
-
-            physics.applyWallHit(
-                correctedPosition: correctedPosition,
-                correctedHeading: correctedHeading,
-                correctedSpeed: newSpeed
-            )
-
-            onWallCollision?()
         } else if nearest.distance <= GameConfig.collisionHalfWidth * 0.9 {
             physics.isRecovering = false
         }

@@ -3,18 +3,21 @@ import Foundation
 
 enum GameConfig {
     // MARK: - Crown Input
-    static let maxTurnRate: CGFloat = 0.3
+    static let maxTurnRate: CGFloat = 0.15
+    static let steeringSmoothSpeed: CGFloat = 15.0
+    static let steeringDeadZone: CGFloat = 0.3
+    static let maxCrownInputRate: CGFloat = 1.5
 
     // MARK: - Speed (points/sec at targetTrackSize=2000)
     static let maxSpeed: CGFloat = 180.0
     static let minSpeedAtMaxSteer: CGFloat = 70.0
     static let accelerationRate: CGFloat = 150.0
-    static let wallSlowdownFactor: CGFloat = 0.45
+    static let wallSlowdownFactor: CGFloat = 0.3
     static let speedRecoveryRate: CGFloat = 150.0
 
     // MARK: - Track (game units at targetTrackSize=2000)
     static let roadHalfWidth: CGFloat = 16.0
-    static let collisionHalfWidth: CGFloat = 18.0
+    static let collisionHalfWidth: CGFloat = 20.0
     static let targetTrackSize: CGFloat = 2000.0
     static let trackPointCount: Int = 800
     static let wallBounceDistance: CGFloat = 2.0
