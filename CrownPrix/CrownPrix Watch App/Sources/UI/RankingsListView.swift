@@ -23,18 +23,20 @@ struct RankingsListView: View {
                     if let entry = localEntries[meta.id] {
                         HStack(spacing: 8) {
                             Spacer()
+                            if entry.rank != 0 {
+                                Text("#\(entry.rank)")
+                                    .font(.system(.caption2, design: .monospaced, weight: .bold))
+                                    .foregroundStyle(.yellow)
+                            }
                             Group {
-                                if entry.rank == 0 {
-                                    Text("N/A")
+                                if entry.lapTime == .zero {
+                                    Text("-:--.---")
                                 } else {
-                                    Text("#\(entry.rank)")
+                                    Text(TimeFormatter.format(entry.lapTime))
                                 }
                             }
-                            .font(.system(.caption2, design: .monospaced, weight: .bold))
-                            .foregroundStyle(.yellow)
-                            Text(TimeFormatter.format(entry.lapTime))
-                                .font(.system(.caption2, design: .monospaced))
-                                .foregroundStyle(.secondary)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.secondary)
                         }
                     }
                 }
