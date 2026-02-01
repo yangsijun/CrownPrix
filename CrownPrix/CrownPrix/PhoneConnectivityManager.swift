@@ -25,14 +25,17 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             replyHandler(["error": "missing type"])
             return
         }
+        print("[WC-Phone] received message: \(type)")
 
         switch type {
         case "submitScore":
             guard let trackId = message["trackId"] as? String,
                   let lapTime = message["lapTime"] as? Double else {
+                print("[WC-Phone] submitScore — invalid params")
                 replyHandler(["ok": false])
                 return
             }
+            print("[WC-Phone] submitScore trackId=\(trackId) lapTime=\(lapTime)")
             GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
             replyHandler(["ok": true])
 
@@ -43,6 +46,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 return
             }
             let times: [TimeInterval?] = rawTimes.map { $0 < 0 ? nil : $0 }
+            print("[WC-Phone] submitSectorTimes trackId=\(trackId) times=\(rawTimes)")
             GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times)
             replyHandler(["ok": true])
 
@@ -52,6 +56,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 replyHandler(["entries": [], "localPlayer": NSNull()])
                 return
             }
+            print("[WC-Phone] loadLeaderboard id=\(leaderboardId) top=\(topCount)")
             Task {
                 let result = await GameCenterManager.shared.loadLeaderboard(leaderboardId: leaderboardId, topCount: topCount)
                 replyHandler(result)
@@ -74,17 +79,20 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
         guard let type = userInfo["type"] as? String else { return }
+        print("[WC-Phone] received userInfo: \(type)")
 
         switch type {
         case "submitScore":
             guard let trackId = userInfo["trackId"] as? String,
                   let lapTime = userInfo["lapTime"] as? Double else { return }
+            print("[WC-Phone] userInfo submitScore trackId=\(trackId) lapTime=\(lapTime)")
             GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
 
         case "submitSectorTimes":
             guard let trackId = userInfo["trackId"] as? String,
                   let rawTimes = userInfo["times"] as? [Double] else { return }
             let times: [TimeInterval?] = rawTimes.map { $0 < 0 ? nil : $0 }
+            print("[WC-Phone] userInfo submitSectorTimes trackId=\(trackId)")
             GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times)
 
         default: break

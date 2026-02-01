@@ -11,7 +11,7 @@ struct ContentView: View {
                 VStack(spacing: 20) {
                     Image(systemName: "gamecontroller.fill")
                         .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.red)
                     Text("Sign in to Game Center")
                         .font(.title3)
                     Text("Open Settings → Game Center to sign in")
@@ -23,4 +23,22 @@ struct ContentView: View {
             }
         }
     }
+}
+
+#Preview("Signed Out") {
+    ContentView()
+        .environmentObject(GameCenterManager.shared)
+        .preferredColorScheme(.dark)
+        .tint(.red)
+}
+
+#Preview("Signed In") {
+    ContentView()
+        .environmentObject({
+            let m = GameCenterManager.shared
+            m.isAuthenticated = true
+            return m
+        }())
+        .preferredColorScheme(.dark)
+        .tint(.red)
 }

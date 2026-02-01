@@ -56,7 +56,7 @@ struct LeaderboardView: View {
                 .font(.system(.body, design: .monospaced))
                 .foregroundStyle(.secondary)
         }
-        .foregroundStyle(entry.isLocalPlayer ? .yellow : .primary)
+        .foregroundStyle(entry.isLocalPlayer ? .red : .primary)
     }
 
     private func fetchScores() async {
@@ -68,4 +68,12 @@ struct LeaderboardView: View {
         }
         isLoading = false
     }
+}
+
+#Preview {
+    NavigationStack {
+        LeaderboardView(leaderboardId: "cp.laptime.albertpark", trackName: "Albert Park")
+    }
+    .preferredColorScheme(.dark)
+    .tint(.red)
 }

@@ -27,10 +27,11 @@ final class GameCenterManager: ObservableObject {
     func authenticate() {
         GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    print("GC auth error: \(error.localizedDescription)")
+                if let error {
+                    print("[GC] auth error: \(error.localizedDescription)")
                 }
                 let authed = GKLocalPlayer.local.isAuthenticated
+                print("[GC] authenticated: \(authed), player: \(GKLocalPlayer.local.displayName)")
                 self?.isAuthenticated = authed
                 PhoneConnectivityManager.shared.sendAuthStatus(authed)
             }
@@ -38,32 +39,59 @@ final class GameCenterManager: ObservableObject {
     }
 
     func submitScore(trackId: String, lapTime: TimeInterval) {
-        guard isAuthenticated else { return }
-        guard let leaderboardId = TrackRegistry.track(byId: trackId)?.leaderboardId else { return }
+        guard isAuthenticated else {
+            print("[GC] submitScore skipped — not authenticated")
+            return
+        }
+        guard let leaderboardId = TrackRegistry.track(byId: trackId)?.leaderboardId else {
+            print("[GC] submitScore skipped — unknown trackId: \(trackId)")
+            return
+        }
         let score = Int(lapTime * 1000)
+        print("[GC] submitting score \(score) to \(leaderboardId)")
         Task {
-            try? await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+            do {
+                try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+                print("[GC] score submitted OK: \(score) -> \(leaderboardId)")
+            } catch {
+                print("[GC] score submit FAILED: \(error)")
+            }
         }
     }
 
     func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
-        guard isAuthenticated else { return }
+        guard isAuthenticated else {
+            print("[GC] submitSectorTimes skipped — not authenticated")
+            return
+        }
         Task {
             for (i, time) in times.enumerated() {
                 guard let t = time else { continue }
                 let leaderboardId = "cp.sector.\(trackId).\(i)"
                 let score = Int(t * 1000)
-                try? await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+                do {
+                    try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+                    print("[GC] sector submitted OK: \(score) -> \(leaderboardId)")
+                } catch {
+                    print("[GC] sector submit FAILED \(leaderboardId): \(error)")
+                }
             }
         }
     }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async -> [String: Any] {
-        guard isAuthenticated else { return ["entries": [], "localPlayer": NSNull()] }
+        guard isAuthenticated else {
+            print("[GC] loadLeaderboard skipped — not authenticated")
+            return ["entries": [], "localPlayer": NSNull()]
+        }
         do {
             let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
-            guard let lb = leaderboards.first else { return ["entries": [], "localPlayer": NSNull()] }
-            let (localEntry, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
+            guard let lb = leaderboards.first else {
+                print("[GC] loadLeaderboard — no leaderboard found for \(leaderboardId)")
+                return ["entries": [], "localPlayer": NSNull()]
+            }
+            let (localEntry, entries, totalCount) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
+            print("[GC] loaded \(leaderboardId): \(entries.count) entries, total=\(totalCount), local=\(localEntry != nil)")
             let topEntries: [[String: Any]] = entries.map { entry in
                 LeaderboardEntry(
                     rank: entry.rank,
@@ -82,6 +110,7 @@ final class GameCenterManager: ObservableObject {
             }
             return ["entries": topEntries, "localPlayer": local as Any]
         } catch {
+            print("[GC] loadLeaderboard FAILED \(leaderboardId): \(error)")
             return ["entries": [], "localPlayer": NSNull()]
         }
     }
@@ -93,12 +122,18 @@ final class GameCenterManager: ObservableObject {
             let leaderboardId = "cp.sector.\(trackId).\(i)"
             do {
                 let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
-                guard let lb = leaderboards.first else { continue }
+                guard let lb = leaderboards.first else {
+                    print("[GC] sector leaderboard not found: \(leaderboardId)")
+                    continue
+                }
                 let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
                 if let top = entries.first {
                     result[i] = Double(top.score) / 1000.0
                 }
-            } catch { continue }
+            } catch {
+                print("[GC] sector load FAILED \(leaderboardId): \(error)")
+                continue
+            }
         }
         return result
     }

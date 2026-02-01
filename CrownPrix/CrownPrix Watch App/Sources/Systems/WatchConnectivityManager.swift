@@ -15,12 +15,14 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         DispatchQueue.main.async {
             self.isPhoneReachable = session.isReachable
             self.syncAuthStatus(session.receivedApplicationContext)
+            print("[WC-Watch] activated, reachable=\(session.isReachable)")
         }
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isPhoneReachable = session.isReachable
+            print("[WC-Watch] reachability changed: \(session.isReachable)")
         }
     }
 
@@ -32,25 +34,33 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
 
     private func syncAuthStatus(_ context: [String: Any]) {
         if let authed = context["gcAuthenticated"] as? Bool {
+            print("[WC-Watch] GC auth status from phone: \(authed)")
             GameCenterManager.shared.isAuthenticated = authed
         }
     }
 
     func sendMessage(_ message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void, errorHandler: @escaping (Error) -> Void) {
         guard WCSession.default.isReachable else {
+            print("[WC-Watch] sendMessage failed — phone not reachable")
             errorHandler(NSError(domain: "WCSession", code: -1, userInfo: [NSLocalizedDescriptionKey: "iPhone not reachable"]))
             return
         }
+        print("[WC-Watch] sendMessage: \(message["type"] ?? "?")")
         WCSession.default.sendMessage(message, replyHandler: replyHandler, errorHandler: errorHandler)
     }
 
     func transferScore(trackId: String, lapTime: TimeInterval) {
         let info: [String: Any] = ["type": "submitScore", "trackId": trackId, "lapTime": lapTime]
         if WCSession.default.isReachable {
-            WCSession.default.sendMessage(info, replyHandler: nil, errorHandler: { _ in
+            print("[WC-Watch] transferScore via sendMessage: \(trackId) \(lapTime)")
+            WCSession.default.sendMessage(info, replyHandler: { reply in
+                print("[WC-Watch] transferScore reply: \(reply)")
+            }, errorHandler: { error in
+                print("[WC-Watch] transferScore sendMessage failed, falling back to transferUserInfo: \(error.localizedDescription)")
                 WCSession.default.transferUserInfo(info)
             })
         } else {
+            print("[WC-Watch] transferScore via transferUserInfo (not reachable): \(trackId) \(lapTime)")
             WCSession.default.transferUserInfo(info)
         }
     }
@@ -59,10 +69,15 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         let rawTimes = times.map { $0 ?? -1.0 }
         let info: [String: Any] = ["type": "submitSectorTimes", "trackId": trackId, "times": rawTimes]
         if WCSession.default.isReachable {
-            WCSession.default.sendMessage(info, replyHandler: nil, errorHandler: { _ in
+            print("[WC-Watch] transferSectorTimes via sendMessage: \(trackId)")
+            WCSession.default.sendMessage(info, replyHandler: { reply in
+                print("[WC-Watch] transferSectorTimes reply: \(reply)")
+            }, errorHandler: { error in
+                print("[WC-Watch] transferSectorTimes sendMessage failed, falling back: \(error.localizedDescription)")
                 WCSession.default.transferUserInfo(info)
             })
         } else {
+            print("[WC-Watch] transferSectorTimes via transferUserInfo (not reachable): \(trackId)")
             WCSession.default.transferUserInfo(info)
         }
     }

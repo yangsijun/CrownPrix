@@ -43,9 +43,13 @@ struct TrackListView: View {
                     }
                 }
             } header: {
-                Label("Open Crown Prix on your Apple Watch", systemImage: "applewatch")
-                    .font(.subheadline)
-                    .textCase(nil)
+                HStack(spacing: 4) {
+                    Image(systemName: "applewatch")
+                    Text("Open Crown Prix on your Apple Watch")
+                        .bold()
+                        .font(.subheadline)
+                }
+                .foregroundStyle(.red.opacity(0.8))
             }
         }
         .navigationTitle("Crown Prix")
@@ -69,4 +73,12 @@ struct TrackListView: View {
             }
         }
     }
+}
+
+#Preview {
+    NavigationStack {
+        TrackListView()
+    }
+    .preferredColorScheme(.dark)
+    .tint(.red)
 }

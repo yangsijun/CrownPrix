@@ -9,6 +9,8 @@ struct CrownPrixApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(gcManager)
+                .preferredColorScheme(.dark)
+                .tint(.red)
                 .onAppear {
                     PhoneConnectivityManager.shared.activate()
                     GameCenterManager.shared.authenticate()
