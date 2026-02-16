@@ -156,6 +156,7 @@ struct TrackSelectView: View {
 
     private func syncFromGameCenter() async {
         await GameCenterManager.shared.syncBestTimes()
+        await GameCenterManager.shared.syncBestSectorTimes()
         loadLocalBestTimes()
     }
 }

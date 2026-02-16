@@ -131,6 +131,34 @@ final class GameCenterManager: ObservableObject {
         return result
     }
 
+    func loadMyBestSectorTimes() async -> [String: [Double]] {
+        guard isAuthenticated else { return [:] }
+        var result: [String: [Double]] = [:]
+        for meta in TrackRegistry.allTracks {
+            var sectors: [Double] = [-1, -1, -1]
+            var hasAny = false
+            for i in 0..<3 {
+                let leaderboardId = "cp.sector.\(meta.id).\(i)"
+                do {
+                    let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
+                    guard let lb = leaderboards.first else { continue }
+                    let (localEntry, _, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
+                    if let entry = localEntry {
+                        sectors[i] = Double(entry.score) / 1000.0
+                        hasAny = true
+                    }
+                } catch {
+                    print("[GC] loadMyBestSectorTimes FAILED \(leaderboardId): \(error)")
+                    continue
+                }
+            }
+            if hasAny {
+                result[meta.id] = sectors
+            }
+        }
+        return result
+    }
+
     func loadMyBestTimes() async -> [String: Double] {
         guard isAuthenticated else { return [:] }
         var result: [String: Double] = [:]

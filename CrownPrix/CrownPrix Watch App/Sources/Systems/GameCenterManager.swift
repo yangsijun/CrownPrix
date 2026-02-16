@@ -121,6 +121,42 @@ final class GameCenterManager: ObservableObject {
         }
     }
 
+    func syncBestSectorTimes() async {
+        guard isAuthenticated else { return }
+
+        let gcData: [String: [Double]] = await withCheckedContinuation { continuation in
+            let message: [String: Any] = ["type": "syncBestSectorTimes"]
+            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                continuation.resume(returning: reply["bestSectorTimes"] as? [String: [Double]] ?? [:])
+            }, errorHandler: { _ in
+                continuation.resume(returning: [:])
+            })
+        }
+
+        for (trackId, gcSectors) in gcData {
+            let times: [TimeInterval?] = gcSectors.map { $0 < 0 ? nil : $0 }
+            PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
+        }
+
+        for meta in TrackRegistry.allTracks {
+            let localTimes = PersistenceManager.getBestSectorTimes(trackId: meta.id)
+            guard localTimes.contains(where: { $0 != nil }) else { continue }
+
+            if let gcSectors = gcData[meta.id] {
+                let gcTimes: [TimeInterval?] = gcSectors.map { $0 < 0 ? nil : $0 }
+                let hasBetter = (0..<3).contains { i in
+                    guard let local = localTimes[i] else { return false }
+                    return gcTimes[i] == nil || local < gcTimes[i]!
+                }
+                if hasBetter {
+                    try? await submitSectorTimes(trackId: meta.id, times: localTimes)
+                }
+            } else {
+                try? await submitSectorTimes(trackId: meta.id, times: localTimes)
+            }
+        }
+    }
+
     private var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
