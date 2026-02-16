@@ -43,13 +43,18 @@ struct LeaderboardView: View {
                 }
             }
         }
-        .task {
-            #if DEBUG
-            guard GameCenterManager.shared.isAuthenticated || GameCenterManager.isDevLeaderboard(leaderboardId) else { return }
-            #else
-            guard GameCenterManager.shared.isAuthenticated else { return }
-            #endif
-            await fetchScores()
+        .onAppear {
+            isLoading = true
+            errorOccurred = false
+            data = nil
+            Task {
+                #if DEBUG
+                guard GameCenterManager.shared.isAuthenticated || GameCenterManager.isDevLeaderboard(leaderboardId) else { return }
+                #else
+                guard GameCenterManager.shared.isAuthenticated else { return }
+                #endif
+                await fetchScores()
+            }
         }
     }
 

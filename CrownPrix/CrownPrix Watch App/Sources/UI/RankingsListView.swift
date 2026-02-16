@@ -60,16 +60,16 @@ struct RankingsListView: View {
     }
 
     private func syncLocalScores() {
-        let allBests = PersistenceManager.getAllBestTimes()
-        for (trackId, lapTime) in allBests {
-            Task { try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime) }
-            let sectorTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
-            if sectorTimes.contains(where: { $0 != nil }) {
-                Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: sectorTimes) }
-            }
-        }
+        isSyncing = true
         Task {
-            try? await Task.sleep(for: .seconds(2))
+            let allBests = PersistenceManager.getAllBestTimes()
+            for (trackId, lapTime) in allBests {
+                try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
+                let sectorTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
+                if sectorTimes.contains(where: { $0 != nil }) {
+                    try? await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: sectorTimes)
+                }
+            }
             await loadLocalEntries()
             isSyncing = false
         }
