@@ -32,7 +32,8 @@ final class PhysicsEngine {
 
         let smoothFactor = min(dt * GameConfig.steeringSmoothSpeed, 1.0)
         smoothedDelta += (CGFloat(delta) - smoothedDelta) * smoothFactor
-        carHeading -= smoothedDelta * GameConfig.maxTurnRate
+        let curvedDelta = PhysicsEngine.applySteeringCurve(smoothedDelta: smoothedDelta)
+        carHeading -= curvedDelta * GameConfig.maxTurnRate
 
         let turnSpeed = dt > 0.0001 ? abs(smoothedDelta) / dt : 0
         let normalizedTurn = min(turnSpeed / GameConfig.maxCrownInputRate, 1.0)
@@ -48,6 +49,14 @@ final class PhysicsEngine {
 
         carPosition.x += cos(carHeading) * currentSpeed * dt
         carPosition.y += sin(carHeading) * currentSpeed * dt
+    }
+
+    static func applySteeringCurve(smoothedDelta: CGFloat) -> CGFloat {
+        let sign: CGFloat = smoothedDelta >= 0 ? 1.0 : -1.0
+        let magnitude = abs(smoothedDelta)
+        let maxDelta = GameConfig.maxCrownInputRate / CGFloat(GameConfig.targetFrameRate)
+        let normalized = min(magnitude / maxDelta, 1.0)
+        return pow(normalized, GameConfig.steeringCurveExponent) * maxDelta * sign
     }
 
     func applyWallHit(correctedPosition: CGPoint, correctedHeading: CGFloat, correctedSpeed: CGFloat) {

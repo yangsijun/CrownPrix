@@ -7,6 +7,7 @@ enum GameConfig {
     static let steeringSmoothSpeed: CGFloat = 15.0
     static let steeringDeadZone: CGFloat = 0.3
     static let maxCrownInputRate: CGFloat = 1.5
+    static let steeringCurveExponent: CGFloat = 2.0
 
     // MARK: - Speed (points/sec at targetTrackSize=2000)
     static let maxSpeed: CGFloat = 180.0
