@@ -89,6 +89,38 @@ final class GameCenterManager: ObservableObject {
         }
     }
 
+    func syncBestTimes() async {
+        guard isAuthenticated else { return }
+
+        let gcTimes: [String: Double] = await withCheckedContinuation { continuation in
+            let message: [String: Any] = ["type": "syncBestTimes"]
+            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                let times = reply["bestTimes"] as? [String: Double] ?? [:]
+                continuation.resume(returning: times)
+            }, errorHandler: { _ in
+                continuation.resume(returning: [:])
+            })
+        }
+
+        guard !gcTimes.isEmpty else { return }
+
+        for (trackId, gcTime) in gcTimes {
+            let localBest = PersistenceManager.getBestTime(trackId: trackId)
+            if localBest == nil || gcTime < localBest! {
+                PersistenceManager.forceSetBestTime(trackId: trackId, time: gcTime)
+            }
+        }
+
+        let allLocal = PersistenceManager.getAllBestTimes()
+        for (trackId, localTime) in allLocal {
+            if let gcTime = gcTimes[trackId], localTime < gcTime {
+                try? await submitScore(trackId: trackId, lapTime: localTime)
+            } else if gcTimes[trackId] == nil {
+                try? await submitScore(trackId: trackId, lapTime: localTime)
+            }
+        }
+    }
+
     private var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }

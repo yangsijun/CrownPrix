@@ -86,6 +86,12 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 replyHandler(["times": times])
             }
 
+        case "syncBestTimes":
+            Task {
+                let bestTimes = await GameCenterManager.shared.loadMyBestTimes()
+                replyHandler(["bestTimes": bestTimes])
+            }
+
         default:
             replyHandler(["error": "unknown type"])
         }

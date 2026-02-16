@@ -11,6 +11,11 @@ enum PersistenceManager {
         }
     }
     
+    static func forceSetBestTime(trackId: String, time: TimeInterval) {
+        let key = "bestTime.\(trackId)"
+        UserDefaults.standard.set(time, forKey: key)
+    }
+
     static func getBestTime(trackId: String) -> TimeInterval? {
         let key = "bestTime.\(trackId)"
         return UserDefaults.standard.object(forKey: key) as? TimeInterval

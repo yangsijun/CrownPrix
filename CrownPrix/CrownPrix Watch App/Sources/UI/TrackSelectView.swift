@@ -8,6 +8,7 @@ struct TrackSelectView: View {
     private let tracks = TrackRegistry.allTracks
     @State private var trackDataCache: [String: TrackData] = [:]
     @State private var selectedTrackId: String?
+    @State private var bestTimes: [String: TimeInterval] = [:]
 
     var body: some View {
         TabView(selection: $selectedTrackId) {
@@ -20,7 +21,9 @@ struct TrackSelectView: View {
         .onAppear {
             if selectedTrackId == nil { selectedTrackId = initialTrackId ?? tracks.first?.id }
             loadAllTrackData()
+            loadLocalBestTimes()
         }
+        .task { await syncFromGameCenter() }
         .toolbar {
             if let onBack {
                 ToolbarItem(placement: .cancellationAction) {
@@ -59,7 +62,7 @@ struct TrackSelectView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 
-                if let best = PersistenceManager.getBestTime(trackId: metadata.id) {
+                if let best = bestTimes[metadata.id] {
                     Text(TimeFormatter.format(best))
                         .font(.system(.footnote, design: .monospaced))
                         .foregroundStyle(.yellow)
@@ -145,6 +148,15 @@ struct TrackSelectView: View {
                 trackDataCache[metadata.id] = data
             }
         }
+    }
+
+    private func loadLocalBestTimes() {
+        bestTimes = PersistenceManager.getAllBestTimes()
+    }
+
+    private func syncFromGameCenter() async {
+        await GameCenterManager.shared.syncBestTimes()
+        loadLocalBestTimes()
     }
 }
 
