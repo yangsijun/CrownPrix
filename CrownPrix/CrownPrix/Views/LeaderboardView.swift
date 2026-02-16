@@ -34,6 +34,12 @@ struct LeaderboardView: View {
         let localInTop = entries.contains { $0.isLocalPlayer }
 
         List {
+            Section("Lap Times") {
+                ForEach(entries) { entry in
+                    entryRow(entry)
+                }
+            }
+            
             if sectorRecords.contains(where: { $0 != nil }) {
                 Section("Purple Sectors") {
                     HStack(spacing: 12) {
@@ -65,12 +71,6 @@ struct LeaderboardView: View {
                         }
                     }
                     .padding(.vertical, 4)
-                }
-            }
-
-            Section("Rankings") {
-                ForEach(entries) { entry in
-                    entryRow(entry)
                 }
             }
 
