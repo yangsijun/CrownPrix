@@ -61,23 +61,27 @@ struct ResultView: View {
                     .font(.system(.caption, design: .rounded, weight: .heavy))
                     .foregroundStyle(Color(red: 0.7, green: 0.3, blue: 1.0))
             } else if let globalBest = globalBestTime {
-                let gap = data.lapTime - globalBest
-                Text(String(format: "P1  +%.3f", gap))
-                    .font(.system(.caption2, design: .monospaced))
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 1) {
+                    Text("P1: \(TimeFormatter.format(globalBest))")
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                    let gap = data.lapTime - globalBest
+                    Text(String(format: "+%.3f", gap))
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            if isPersonalBest {
+            if isPersonalBest && !isWorldRecord {
                 Text("NEW RECORD!")
                     .font(.caption)
                     .foregroundStyle(.green)
                     .bold()
-            } else if let best = previousBest {
-                VStack(spacing: 2) {
+            } else if !isPersonalBest, let best = previousBest {
+                VStack(spacing: 1) {
                     Text("Best: \(TimeFormatter.format(best))")
                         .font(.system(.caption2, design: .monospaced))
                         .foregroundStyle(.secondary)
-
                     let delta = data.lapTime - best
                     Text(String(format: "+%.3f", delta))
                         .font(.system(.caption2, design: .monospaced))
@@ -93,26 +97,28 @@ struct ResultView: View {
             ForEach(0..<3, id: \.self) { i in
                 let time = data.sectorTimes[i]
                 let color = data.sectorColors[i]
-                Text("S\(i + 1) \(formatSectorTime(time))")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.black)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 3)
-                    .background(color.swiftUIColor.opacity(0.85))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                VStack(spacing: 2) {
+                    Text("S\(i)")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundStyle(.black)
+                    Text(formatSectorTime(time))
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(.black)
+                }
+                .padding(.horizontal, 5)
+                .padding(.vertical, 3)
+                .background(color.swiftUIColor.opacity(0.85))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
             }
         }
     }
 
     private func formatSectorTime(_ time: TimeInterval?) -> String {
         guard let time else { return "--.---" }
-        let secs = Int(time) % 60
-        let millis = Int((time.truncatingRemainder(dividingBy: 1)) * 1000)
-        let minutes = Int(time) / 60
-        if minutes > 0 {
-            return String(format: "%d:%02d.%03d", minutes, secs, millis)
-        }
-        return String(format: "%d.%03d", secs, millis)
+        let totalMillis = Int(time * 1000)
+        let secs = (totalMillis % 60000) / 1000
+        let millis = totalMillis % 1000
+        return String(format: "%02d.%03d", secs, millis)
     }
 
     private func loadGlobalBest() async {
