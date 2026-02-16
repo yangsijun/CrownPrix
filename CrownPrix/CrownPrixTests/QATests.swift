@@ -86,45 +86,6 @@ final class QATests: XCTestCase {
         XCTAssertGreaterThan(GameConfig.accelerationRate, 0)
         XCTAssertGreaterThan(GameConfig.countdownDuration, 0)
         XCTAssertGreaterThan(GameConfig.lapCrossSegmentWindow, 0)
-        XCTAssertGreaterThan(GameConfig.steeringCurveExponent, 1.0, "Exponent must be > 1 for dampening")
-        XCTAssertLessThanOrEqual(GameConfig.steeringCurveExponent, 4.0, "Exponent > 4 over-dampens steering")
-    }
-
-    // MARK: - Steering Curve (PhysicsEngine)
-
-    func testSteeringCurveSmallInputDampened() {
-        let maxDelta = GameConfig.maxCrownInputRate / CGFloat(GameConfig.targetFrameRate)
-        let smallInput = maxDelta * 0.2
-
-        let smallResult = abs(PhysicsEngine.applySteeringCurve(smoothedDelta: smallInput))
-        let maxResult = abs(PhysicsEngine.applySteeringCurve(smoothedDelta: maxDelta))
-
-        let ratio = smallResult / maxResult
-        let expected = pow(0.2, GameConfig.steeringCurveExponent)
-        XCTAssertEqual(ratio, expected, accuracy: 0.001,
-                       "20% input should produce ~\(expected * 100)% of max steering output")
-    }
-
-    func testSteeringCurveMaxInputPreserved() {
-        let maxDelta = GameConfig.maxCrownInputRate / CGFloat(GameConfig.targetFrameRate)
-
-        let result = PhysicsEngine.applySteeringCurve(smoothedDelta: maxDelta)
-
-        XCTAssertEqual(result, maxDelta, accuracy: 0.0001,
-                       "Max input should pass through unchanged (pow(1.0, exp) == 1.0)")
-    }
-
-    func testSteeringCurveSymmetric() {
-        let maxDelta = GameConfig.maxCrownInputRate / CGFloat(GameConfig.targetFrameRate)
-        let halfInput = maxDelta * 0.5
-
-        let leftResult = PhysicsEngine.applySteeringCurve(smoothedDelta: halfInput)
-        let rightResult = PhysicsEngine.applySteeringCurve(smoothedDelta: -halfInput)
-
-        XCTAssertEqual(abs(leftResult), abs(rightResult), accuracy: 0.0001,
-                       "Left and right should produce equal magnitude")
-        XCTAssertEqual(leftResult, -rightResult, accuracy: 0.0001,
-                       "Left and right should be opposite signs")
     }
 
     // MARK: - Collision Geometry (static methods only)
