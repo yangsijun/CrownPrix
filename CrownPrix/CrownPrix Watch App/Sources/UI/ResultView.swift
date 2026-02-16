@@ -8,26 +8,38 @@ struct ResultView: View {
 
     @State private var savedRecord = false
     @State private var globalBestTime: TimeInterval?
+    @State private var previousBest: TimeInterval?
+
+    init(data: RaceCompletionData, onRetry: @escaping () -> Void, onBackToTracks: @escaping () -> Void, onShowLeaderboard: (() -> Void)? = nil, previewGlobalBest: TimeInterval? = nil, previewPreviousBest: TimeInterval? = nil) {
+        self.data = data
+        self.onRetry = onRetry
+        self.onBackToTracks = onBackToTracks
+        self.onShowLeaderboard = onShowLeaderboard
+        _globalBestTime = State(initialValue: previewGlobalBest)
+        _previousBest = State(initialValue: previewPreviousBest)
+    }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
-                Text("FINISH")
-                    .font(.system(.headline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.yellow)
+            VStack(spacing: 16) {
+                VStack(spacing: 10) {
+                    titleSection
+                    
+                    Text(TimeFormatter.format(data.lapTime))
+                        .font(.system(.title2, design: .monospaced, weight: .bold))
+                    
+                    sectorTimesSection
+                    recordSection
+                }
 
-                Text(TimeFormatter.format(data.lapTime))
-                    .font(.system(.title2, design: .monospaced, weight: .bold))
-
-                recordSection
-                sectorTimesSection
-
-                Button("Retry", action: onRetry)
-                    .buttonStyle(.borderedProminent)
-                    .tint(.red)
-
-                Button("Tracks", action: onBackToTracks)
-                    .buttonStyle(.bordered)
+                VStack(spacing: 10) {
+                    Button("Retry", action: onRetry)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                    
+                    Button("Tracks", action: onBackToTracks)
+                        .buttonStyle(.bordered)
+                }
 
                 #if DEBUG
                 let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || data.trackId == "dev"
@@ -42,50 +54,60 @@ struct ResultView: View {
         }
         .task {
             if !savedRecord {
+                if previousBest == nil {
+                    previousBest = PersistenceManager.getBestTime(trackId: data.trackId)
+                }
                 PersistenceManager.saveBestTime(trackId: data.trackId, time: data.lapTime)
                 savedRecord = true
             }
             await loadGlobalBest()
         }
     }
+    
+    @ViewBuilder
+    private var titleSection: some View {
+        let isPersonalBest = previousBest == nil || data.lapTime <= previousBest!
+        let isFastestLap = globalBestTime != nil && data.lapTime <= globalBestTime!
+        
+        Group {
+            if isFastestLap {
+                Text("FASTEST LAP!!")
+                    .foregroundStyle(Color(red: 0.7, green: 0.3, blue: 1.0))
+            } else if isPersonalBest {
+                Text("NEW RECORD!")
+                    .foregroundStyle(.green)
+            } else {
+                Text("FINISH")
+                    .foregroundStyle(.yellow)
+            }
+        }
+        .font(.system(.headline, design: .rounded, weight: .bold))
+    }
 
     @ViewBuilder
     private var recordSection: some View {
-        let previousBest = PersistenceManager.getBestTime(trackId: data.trackId)
-        let isPersonalBest = previousBest == nil || data.lapTime <= previousBest!
-        let isWorldRecord = globalBestTime != nil && data.lapTime <= globalBestTime!
-
         VStack(spacing: 4) {
-            if isWorldRecord {
-                Text("WORLD RECORD!")
-                    .font(.system(.caption, design: .rounded, weight: .heavy))
-                    .foregroundStyle(Color(red: 0.7, green: 0.3, blue: 1.0))
-            } else if let globalBest = globalBestTime {
-                VStack(spacing: 1) {
+            if let globalBest = globalBestTime {
+                HStack(spacing: 4) {
                     Text("P1: \(TimeFormatter.format(globalBest))")
-                        .font(.system(.caption2, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
                     let gap = data.lapTime - globalBest
-                    Text(String(format: "+%.3f", gap))
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                    Text(String(format: "%+.3f", gap))
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(gap < 0 ? .green : .red)
                 }
             }
 
-            if isPersonalBest && !isWorldRecord {
-                Text("NEW RECORD!")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                    .bold()
-            } else if !isPersonalBest, let best = previousBest {
-                VStack(spacing: 1) {
+            if let best = previousBest {
+                HStack(spacing: 4) {
                     Text("Best: \(TimeFormatter.format(best))")
-                        .font(.system(.caption2, design: .monospaced))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
                     let delta = data.lapTime - best
-                    Text(String(format: "+%.3f", delta))
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.red)
+                    Text(String(format: "%+.3f", delta))
+                        .font(.system(size: 10, weight: .medium, design: .monospaced))
+                        .foregroundStyle(delta < 0 ? .green : .red)
                 }
             }
         }
@@ -148,15 +170,47 @@ extension SectorColor {
     }
 }
 
-#Preview {
+#Preview("World Record") {
     ResultView(
         data: RaceCompletionData(
-            trackId: "albertpark",
-            lapTime: 83.456,
-            sectorTimes: [25.432, 28.891, 29.133],
-            sectorColors: [.purple, .green, .yellow]
+            trackId: "preview_wr",
+            lapTime: 78.123,
+            sectorTimes: [23.456, 26.789, 27.878],
+            sectorColors: [.purple, .purple, .green]
         ),
         onRetry: {},
-        onBackToTracks: {}
+        onBackToTracks: {},
+        previewGlobalBest: 79.000,
+        previewPreviousBest: 80.500
+    )
+}
+
+#Preview("New Record") {
+    ResultView(
+        data: RaceCompletionData(
+            trackId: "preview_nr",
+            lapTime: 83.456,
+            sectorTimes: [25.432, 28.100, 29.924],
+            sectorColors: [.green, .purple, .yellow]
+        ),
+        onRetry: {},
+        onBackToTracks: {},
+        previewGlobalBest: 80.000,
+        previewPreviousBest: 84.000
+    )
+}
+
+#Preview("Not Beaten") {
+    ResultView(
+        data: RaceCompletionData(
+            trackId: "preview_nb",
+            lapTime: 83.456,
+            sectorTimes: [25.432, 28.891, 29.133],
+            sectorColors: [.yellow, .green, .yellow]
+        ),
+        onRetry: {},
+        onBackToTracks: {},
+        previewGlobalBest: 78.500,
+        previewPreviousBest: 80.000
     )
 }
