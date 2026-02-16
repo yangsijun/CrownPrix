@@ -42,6 +42,7 @@ struct LeaderboardView: View {
                 }
             }
         }
+        .refreshable { await fetchScores() }
     }
 
     private func entryRow(_ entry: LeaderboardEntry) -> some View {

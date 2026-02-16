@@ -53,6 +53,7 @@ struct TrackListView: View {
             }
         }
         .navigationTitle("Crown Prix")
+        .refreshable { await loadLocalEntries() }
         .task { await loadLocalEntries() }
     }
 
