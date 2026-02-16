@@ -32,12 +32,22 @@ final class PhysicsEngine {
 
         let smoothFactor = min(dt * GameConfig.steeringSmoothSpeed, 1.0)
         smoothedDelta += (CGFloat(delta) - smoothedDelta) * smoothFactor
-        carHeading -= smoothedDelta * GameConfig.maxTurnRate
+        let sign: CGFloat = smoothedDelta >= 0 ? 1.0 : -1.0
+        let magnitude = abs(smoothedDelta)
+        let refDelta = GameConfig.maxCrownInputRate / CGFloat(GameConfig.targetFrameRate)
+        let curvedDelta: CGFloat
+        if magnitude <= refDelta {
+            let normalized = magnitude / refDelta
+            curvedDelta = pow(normalized, GameConfig.steeringCurveExponent) * refDelta * sign
+        } else {
+            curvedDelta = smoothedDelta
+        }
+        carHeading -= curvedDelta * GameConfig.maxTurnRate
 
-        let turnSpeed = dt > 0.0001 ? abs(smoothedDelta) / dt : 0
+        let turnSpeed = dt > 0.0001 ? abs(CGFloat(delta)) / dt : 0
         let normalizedTurn = min(turnSpeed / GameConfig.maxCrownInputRate, 1.0)
         let effective = max(0, (normalizedTurn - GameConfig.steeringDeadZone) / (1.0 - GameConfig.steeringDeadZone))
-        let curved = effective * effective * effective
+        let curved = effective * effective * effective * effective * effective
         let targetSpeed = GameConfig.minSpeedAtMaxSteer + (1.0 - curved) * (GameConfig.maxSpeed - GameConfig.minSpeedAtMaxSteer)
 
         if currentSpeed < targetSpeed {
