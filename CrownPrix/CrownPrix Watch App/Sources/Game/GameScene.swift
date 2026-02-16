@@ -86,7 +86,6 @@ final class GameScene: SKScene, ObservableObject {
             let lapTime = timer.currentTime
             let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
             timer.freeze(isNewRecord: isNew)
-            self.sectorDetector?.saveBestSectorTimes()
 
             // Build sector data with S3 fallback
             var sectorTimes = self.sectorDetector?.sectorTimes ?? [nil, nil, nil]
@@ -99,9 +98,8 @@ final class GameScene: SKScene, ObservableObject {
                 sectorColors[2] = self.sectorDetector?.determineSectorColor(sector: 2, time: s3) ?? .white
             }
 
-            if let times = self.sectorDetector?.sectorTimes {
-                Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: times) }
-            }
+            PersistenceManager.saveBestSectorTimes(trackId: currentTrackId, times: sectorTimes)
+            Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: sectorTimes) }
 
             let data = RaceCompletionData(
                 trackId: currentTrackId,
