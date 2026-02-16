@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var gcManager: GameCenterManager
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
@@ -20,6 +21,23 @@ struct ContentView: View {
                         .multilineTextAlignment(.center)
                 }
                 .padding()
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        let subject = "Crown Prix Feedback"
+                        let urlString = "mailto:yang@sijun.dev?subject=\(subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? subject)"
+                        if let url = URL(string: urlString) {
+                            openURL(url)
+                        }
+                    } label: {
+                        Label("Send Feedback", systemImage: "envelope")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
             }
         }
     }
