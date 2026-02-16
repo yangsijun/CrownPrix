@@ -28,7 +28,12 @@ struct ResultView: View {
                 Button("Tracks", action: onBackToTracks)
                     .buttonStyle(.bordered)
 
-                if GameCenterManager.shared.isAuthenticated, let onShowLeaderboard {
+                #if DEBUG
+                let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || trackId == "dev"
+                #else
+                let canShowLeaderboard = GameCenterManager.shared.isAuthenticated
+                #endif
+                if canShowLeaderboard, let onShowLeaderboard {
                     Button("Rankings", action: onShowLeaderboard)
                         .buttonStyle(.bordered)
                 }

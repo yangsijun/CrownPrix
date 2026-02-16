@@ -76,7 +76,20 @@ struct RankingsListView: View {
     }
 
     private func loadLocalEntries() async {
+        #if DEBUG
+        let isAuthed = GameCenterManager.shared.isAuthenticated
+        for meta in tracks where GameCenterManager.isDevTrack(meta.id) && !isAuthed {
+            let mockData = try? await GameCenterManager.shared.loadLeaderboard(
+                leaderboardId: meta.leaderboardId, topCount: 1
+            )
+            if let local = mockData?.localPlayer {
+                localEntries[meta.id] = local
+            }
+        }
+        guard isAuthed else { return }
+        #else
         guard GameCenterManager.shared.isAuthenticated else { return }
+        #endif
         await withTaskGroup(of: (String, LeaderboardEntry?).self) { group in
             for meta in tracks {
                 group.addTask {

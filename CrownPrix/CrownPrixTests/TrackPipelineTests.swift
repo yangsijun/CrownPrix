@@ -155,7 +155,12 @@ final class TrackPipelineTests: XCTestCase {
     }
 
     func testTrackRegistryHas24Entries() {
+        #if DEBUG
+        // +1 for dev-only circuit
+        XCTAssertEqual(TrackRegistry.allTracks.count, 25)
+        #else
         XCTAssertEqual(TrackRegistry.allTracks.count, 24)
+        #endif
     }
 
     func testAllTrackIdsUnique() {
@@ -191,7 +196,11 @@ final class TrackPipelineTests: XCTestCase {
             try jsonData.write(to: outputURL)
             writtenCount += 1
         }
+        #if DEBUG
+        XCTAssertEqual(writtenCount, 25)
+        #else
         XCTAssertEqual(writtenCount, 24)
+        #endif
     }
 
     private func makeCircle(count: Int, radius: CGFloat) -> [CGPoint] {

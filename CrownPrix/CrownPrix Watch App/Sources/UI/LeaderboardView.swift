@@ -11,7 +11,12 @@ struct LeaderboardView: View {
 
     var body: some View {
         Group {
-            if !GameCenterManager.shared.isAuthenticated {
+            #if DEBUG
+            let needsAuth = !GameCenterManager.shared.isAuthenticated && !GameCenterManager.isDevLeaderboard(leaderboardId)
+            #else
+            let needsAuth = !GameCenterManager.shared.isAuthenticated
+            #endif
+            if needsAuth {
                 Text("Sign in to Game Center on your iPhone")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -39,7 +44,11 @@ struct LeaderboardView: View {
             }
         }
         .task {
+            #if DEBUG
+            guard GameCenterManager.shared.isAuthenticated || GameCenterManager.isDevLeaderboard(leaderboardId) else { return }
+            #else
             guard GameCenterManager.shared.isAuthenticated else { return }
+            #endif
             await fetchScores()
         }
     }

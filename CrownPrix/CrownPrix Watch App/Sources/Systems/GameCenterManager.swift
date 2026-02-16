@@ -27,15 +27,32 @@ final class GameCenterManager: ObservableObject {
     @Published var isAuthenticated: Bool = false
 
     func submitScore(trackId: String, lapTime: TimeInterval) {
+        #if DEBUG
+        if Self.isDevTrack(trackId) {
+            print("[GC-Mock] submitScore intercepted: \(trackId) \(lapTime)")
+            return
+        }
+        #endif
         WatchConnectivityManager.shared.transferScore(trackId: trackId, lapTime: lapTime)
     }
 
     func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
+        #if DEBUG
+        if Self.isDevTrack(trackId) {
+            print("[GC-Mock] submitSectorTimes intercepted: \(trackId)")
+            return
+        }
+        #endif
         WatchConnectivityManager.shared.transferSectorTimes(trackId: trackId, times: times)
     }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
-        try await withCheckedThrowingContinuation { continuation in
+        #if DEBUG
+        if Self.isDevLeaderboard(leaderboardId) {
+            return Self.mockLeaderboardData()
+        }
+        #endif
+        return try await withCheckedThrowingContinuation { continuation in
             let message: [String: Any] = ["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount]
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
                 let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
@@ -56,7 +73,12 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadGlobalBestSectorTimes(trackId: String) async -> [TimeInterval?] {
-        await withCheckedContinuation { continuation in
+        #if DEBUG
+        if Self.isDevTrack(trackId) {
+            return Self.mockSectorTimes()
+        }
+        #endif
+        return await withCheckedContinuation { continuation in
             let message: [String: Any] = ["type": "loadBestSectorTimes", "trackId": trackId]
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
                 let times = (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
@@ -70,4 +92,39 @@ final class GameCenterManager: ObservableObject {
     private var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
+
+    #if DEBUG
+    // MARK: - Dev Track Mock
+
+    private static let devTrackId = "dev"
+    private static let devLeaderboardId = "cp.laptime.dev"
+
+    static func isDevTrack(_ trackId: String) -> Bool {
+        trackId == devTrackId
+    }
+
+    static func isDevLeaderboard(_ leaderboardId: String) -> Bool {
+        leaderboardId == devLeaderboardId
+    }
+
+    private static func mockLeaderboardData() -> LeaderboardData {
+        let names = ["Max V.", "Lewis H.", "Charles L.", "Lando N.", "Carlos S.",
+                     "Oscar P.", "George R.", "Fernando A.", "Pierre G.", "Yuki T."]
+        let baseLapTime: TimeInterval = 82.0
+        let entries = names.enumerated().map { i, name in
+            LeaderboardEntry(
+                rank: i + 1,
+                playerName: name,
+                lapTime: baseLapTime + Double(i) * 0.347,
+                isLocalPlayer: i == 4
+            )
+        }
+        let local = entries.first { $0.isLocalPlayer }
+        return LeaderboardData(topEntries: entries, localPlayer: local)
+    }
+
+    private static func mockSectorTimes() -> [TimeInterval?] {
+        [25.432, 28.891, 27.677]
+    }
+    #endif
 }

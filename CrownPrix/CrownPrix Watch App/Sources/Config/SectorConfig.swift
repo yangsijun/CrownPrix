@@ -33,6 +33,9 @@ enum SectorConfig {
         case "lasvegas":          return TrackLayout(startOffset: 0.00, sector1End: 0.451, sector2End: 0.742)
         case "losail":            return TrackLayout(startOffset: 0.00, sector1End: 0.352, sector2End: 0.690)
         case "abudhabi":          return TrackLayout(startOffset: 0.00, sector1End: 0.276, sector2End: 0.627)
+        #if DEBUG
+        case "dev":               return TrackLayout(startOffset: 0.00, sector1End: 0.299, sector2End: 0.683)
+        #endif
         default:                  return TrackLayout(startOffset: 0.00, sector1End: 0.333, sector2End: 0.667)
         }
     }

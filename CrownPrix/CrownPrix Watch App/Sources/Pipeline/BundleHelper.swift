@@ -12,7 +12,12 @@ enum BundleHelper {
 
     /// Load a pre-processed track JSON by trackId (e.g., "monaco").
     static func trackDataURL(trackId: String, bundle: Bundle = .main) -> URL? {
-        bundle.url(forResource: trackId, withExtension: "json", subdirectory: "PreprocessedTracks")
-        ?? bundle.url(forResource: trackId, withExtension: "json")
+        #if DEBUG
+        let resolvedId = trackId == "dev" ? "bahrain" : trackId
+        #else
+        let resolvedId = trackId
+        #endif
+        return bundle.url(forResource: resolvedId, withExtension: "json", subdirectory: "PreprocessedTracks")
+            ?? bundle.url(forResource: resolvedId, withExtension: "json")
     }
 }
