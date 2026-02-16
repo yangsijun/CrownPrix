@@ -6,6 +6,7 @@ final class SectorDetector {
     private(set) var currentSector: Int = 0
     private var sectorStartTime: TimeInterval = 0
     private(set) var sectorTimes: [TimeInterval?] = [nil, nil, nil]
+    private(set) var sectorColors: [SectorColor] = [.white, .white, .white]
 
     var onSectorComplete: ((Int, TimeInterval, SectorColor) -> Void)?
 
@@ -28,6 +29,7 @@ final class SectorDetector {
         currentSector = 0
         sectorStartTime = 0
         sectorTimes = [nil, nil, nil]
+        sectorColors = [.white, .white, .white]
     }
 
     func update(currentSegmentIndex: Int, elapsedTime: TimeInterval) {
@@ -40,6 +42,7 @@ final class SectorDetector {
         sectorTimes[completedSector] = sectorTime
 
         let color = determineSectorColor(sector: completedSector, time: sectorTime)
+        sectorColors[completedSector] = color
 
         onSectorComplete?(completedSector, sectorTime, color)
 
@@ -58,7 +61,7 @@ final class SectorDetector {
         return 2
     }
 
-    private func determineSectorColor(sector: Int, time: TimeInterval) -> SectorColor {
+    func determineSectorColor(sector: Int, time: TimeInterval) -> SectorColor {
         if let global = globalBestSectorTimes[sector], time < global {
             return .purple
         }

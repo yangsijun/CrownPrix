@@ -39,7 +39,7 @@ struct ContentView: View {
         case .race(let trackId):
             RaceView(
                 trackId: trackId,
-                onLapComplete: { lapTime in screen = .result(data: RaceCompletionData(trackId: trackId, lapTime: lapTime, sectorTimes: [nil, nil, nil], sectorColors: [.white, .white, .white])) },
+                onLapComplete: { data in screen = .result(data: data) },
                 onDNF: { screen = .trackSelect }
             )
 

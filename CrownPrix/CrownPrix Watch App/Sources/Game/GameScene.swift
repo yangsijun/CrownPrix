@@ -3,7 +3,7 @@ import Combine
 
 final class GameScene: SKScene, ObservableObject {
     @Published var crownRotation: Double = 0.0
-    var onLapComplete: ((TimeInterval) -> Void)?
+    var onLapComplete: ((RaceCompletionData) -> Void)?
 
     private(set) var trackId: String?
     private(set) var trackData: TrackData?
@@ -87,10 +87,29 @@ final class GameScene: SKScene, ObservableObject {
             let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
             timer.freeze(isNewRecord: isNew)
             self.sectorDetector?.saveBestSectorTimes()
+
+            // Build sector data with S3 fallback
+            var sectorTimes = self.sectorDetector?.sectorTimes ?? [nil, nil, nil]
+            var sectorColors = self.sectorDetector?.sectorColors ?? [.white, .white, .white]
+
+            // S3 may be nil because lap.update fires before sector.update
+            if sectorTimes[2] == nil, let s1 = sectorTimes[0], let s2 = sectorTimes[1] {
+                let s3 = lapTime - s1 - s2
+                sectorTimes[2] = s3
+                sectorColors[2] = self.sectorDetector?.determineSectorColor(sector: 2, time: s3) ?? .white
+            }
+
             if let times = self.sectorDetector?.sectorTimes {
                 Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: times) }
             }
-            self.onLapComplete?(lapTime)
+
+            let data = RaceCompletionData(
+                trackId: currentTrackId,
+                lapTime: lapTime,
+                sectorTimes: sectorTimes,
+                sectorColors: sectorColors
+            )
+            self.onLapComplete?(data)
         }
         lapDetector = lap
 
