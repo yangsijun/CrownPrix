@@ -9,7 +9,7 @@ struct TrackListView: View {
             Section {
                 ForEach(tracks) { meta in
                     NavigationLink {
-                        LeaderboardView(leaderboardId: meta.leaderboardId, trackName: meta.displayName)
+                        LeaderboardView(leaderboardId: meta.leaderboardId, trackName: meta.displayName, trackId: meta.id)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {

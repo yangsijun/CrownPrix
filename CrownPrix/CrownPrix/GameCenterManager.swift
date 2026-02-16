@@ -130,4 +130,34 @@ final class GameCenterManager: ObservableObject {
         }
         return result
     }
+
+    struct SectorRecord {
+        let sector: Int
+        let playerName: String
+        let time: TimeInterval
+    }
+
+    func loadSectorRecords(trackId: String) async -> [SectorRecord?] {
+        guard isAuthenticated else { return [nil, nil, nil] }
+        var result: [SectorRecord?] = [nil, nil, nil]
+        for i in 0..<3 {
+            let leaderboardId = "cp.sector.\(trackId).\(i)"
+            do {
+                let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
+                guard let lb = leaderboards.first else { continue }
+                let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
+                if let top = entries.first {
+                    result[i] = SectorRecord(
+                        sector: i,
+                        playerName: top.player.displayName,
+                        time: Double(top.score) / 1000.0
+                    )
+                }
+            } catch {
+                print("[GC] sector record load FAILED \(leaderboardId): \(error)")
+                continue
+            }
+        }
+        return result
+    }
 }

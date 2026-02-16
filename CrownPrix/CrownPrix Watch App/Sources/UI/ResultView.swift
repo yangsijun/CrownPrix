@@ -98,7 +98,7 @@ struct ResultView: View {
                 let time = data.sectorTimes[i]
                 let color = data.sectorColors[i]
                 VStack(spacing: 2) {
-                    Text("S\(i)")
+                    Text("S\(i + 1)")
                         .font(.system(size: 9, weight: .bold, design: .monospaced))
                         .foregroundStyle(.black)
                     Text(formatSectorTime(time))
