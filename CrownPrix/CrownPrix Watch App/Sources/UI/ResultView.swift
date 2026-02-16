@@ -39,16 +39,16 @@ struct ResultView: View {
                     
                     Button("Tracks", action: onBackToTracks)
                         .buttonStyle(.bordered)
-                }
 
-                #if DEBUG
-                let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || data.trackId == "dev"
-                #else
-                let canShowLeaderboard = GameCenterManager.shared.isAuthenticated
-                #endif
-                if canShowLeaderboard, let onShowLeaderboard {
-                    Button("Rankings", action: onShowLeaderboard)
-                        .buttonStyle(.bordered)
+                    #if DEBUG
+                    let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || data.trackId == "dev"
+                    #else
+                    let canShowLeaderboard = GameCenterManager.shared.isAuthenticated
+                    #endif
+                    if canShowLeaderboard, let onShowLeaderboard {
+                        Button("Rankings", action: onShowLeaderboard)
+                            .buttonStyle(.bordered)
+                    }
                 }
             }
         }
