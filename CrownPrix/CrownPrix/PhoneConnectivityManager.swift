@@ -36,8 +36,15 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 return
             }
             print("[WC-Phone] submitScore trackId=\(trackId) lapTime=\(lapTime)")
-            GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
-            replyHandler(["ok": true])
+            Task {
+                do {
+                    try await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
+                    replyHandler(["ok": true])
+                } catch {
+                    print("[WC-Phone] submitScore failed: \(error)")
+                    replyHandler(["ok": false, "error": error.localizedDescription])
+                }
+            }
 
         case "submitSectorTimes":
             guard let trackId = message["trackId"] as? String,
@@ -47,8 +54,15 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             }
             let times: [TimeInterval?] = rawTimes.map { $0 < 0 ? nil : $0 }
             print("[WC-Phone] submitSectorTimes trackId=\(trackId) times=\(rawTimes)")
-            GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times)
-            replyHandler(["ok": true])
+            Task {
+                do {
+                    try await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times)
+                    replyHandler(["ok": true])
+                } catch {
+                    print("[WC-Phone] submitSectorTimes failed: \(error)")
+                    replyHandler(["ok": false, "error": error.localizedDescription])
+                }
+            }
 
         case "loadLeaderboard":
             guard let leaderboardId = message["leaderboardId"] as? String,
@@ -86,14 +100,14 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             guard let trackId = userInfo["trackId"] as? String,
                   let lapTime = userInfo["lapTime"] as? Double else { return }
             print("[WC-Phone] userInfo submitScore trackId=\(trackId) lapTime=\(lapTime)")
-            GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
+            Task { try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime) }
 
         case "submitSectorTimes":
             guard let trackId = userInfo["trackId"] as? String,
                   let rawTimes = userInfo["times"] as? [Double] else { return }
             let times: [TimeInterval?] = rawTimes.map { $0 < 0 ? nil : $0 }
             print("[WC-Phone] userInfo submitSectorTimes trackId=\(trackId)")
-            GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times)
+            Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: times) }
 
         default: break
         }

@@ -20,6 +20,11 @@ struct LeaderboardEntry: Identifiable {
     }
 }
 
+enum GCError: Error {
+    case notAuthenticated
+    case unknownTrack
+}
+
 final class GameCenterManager: ObservableObject {
     static let shared = GameCenterManager()
     @Published var isAuthenticated = false
@@ -38,44 +43,32 @@ final class GameCenterManager: ObservableObject {
         }
     }
 
-    func submitScore(trackId: String, lapTime: TimeInterval) {
+    func submitScore(trackId: String, lapTime: TimeInterval) async throws {
         guard isAuthenticated else {
             print("[GC] submitScore skipped — not authenticated")
-            return
+            throw GCError.notAuthenticated
         }
         guard let leaderboardId = TrackRegistry.track(byId: trackId)?.leaderboardId else {
             print("[GC] submitScore skipped — unknown trackId: \(trackId)")
-            return
+            throw GCError.unknownTrack
         }
         let score = Int(lapTime * 1000)
         print("[GC] submitting score \(score) to \(leaderboardId)")
-        Task {
-            do {
-                try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
-                print("[GC] score submitted OK: \(score) -> \(leaderboardId)")
-            } catch {
-                print("[GC] score submit FAILED: \(error)")
-            }
-        }
+        try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+        print("[GC] score submitted OK: \(score) -> \(leaderboardId)")
     }
 
-    func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
+    func submitSectorTimes(trackId: String, times: [TimeInterval?]) async throws {
         guard isAuthenticated else {
             print("[GC] submitSectorTimes skipped — not authenticated")
-            return
+            throw GCError.notAuthenticated
         }
-        Task {
-            for (i, time) in times.enumerated() {
-                guard let t = time else { continue }
-                let leaderboardId = "cp.sector.\(trackId).\(i)"
-                let score = Int(t * 1000)
-                do {
-                    try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
-                    print("[GC] sector submitted OK: \(score) -> \(leaderboardId)")
-                } catch {
-                    print("[GC] sector submit FAILED \(leaderboardId): \(error)")
-                }
-            }
+        for (i, time) in times.enumerated() {
+            guard let t = time else { continue }
+            let leaderboardId = "cp.sector.\(trackId).\(i)"
+            let score = Int(t * 1000)
+            try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
+            print("[GC] sector submitted OK: \(score) -> \(leaderboardId)")
         }
     }
 
