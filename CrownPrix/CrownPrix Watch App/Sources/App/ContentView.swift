@@ -45,8 +45,7 @@ struct ContentView: View {
 
         case .result(let data):
             ResultView(
-                trackId: data.trackId,
-                lapTime: data.lapTime,
+                data: data,
                 onRetry: { screen = .race(trackId: data.trackId) },
                 onBackToTracks: { screen = .trackSelect },
                 onShowLeaderboard: {
