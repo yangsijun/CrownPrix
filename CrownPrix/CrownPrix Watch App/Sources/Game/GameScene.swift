@@ -88,7 +88,7 @@ final class GameScene: SKScene, ObservableObject {
             timer.freeze(isNewRecord: isNew)
             self.sectorDetector?.saveBestSectorTimes()
             if let times = self.sectorDetector?.sectorTimes {
-                GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: times)
+                Task { try? await GameCenterManager.shared.submitSectorTimes(trackId: currentTrackId, times: times) }
             }
             self.onLapComplete?(lapTime)
         }

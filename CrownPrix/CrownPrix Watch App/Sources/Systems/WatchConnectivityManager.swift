@@ -86,4 +86,51 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             WCSession.default.transferUserInfo(info)
         }
     }
+
+    func transferScoreAsync(trackId: String, lapTime: TimeInterval) async throws {
+        let info: [String: Any] = ["type": "submitScore", "trackId": trackId, "lapTime": lapTime]
+        guard WCSession.default.isReachable else {
+            print("[WC-Watch] transferScoreAsync falling back to transferUserInfo (not reachable)")
+            WCSession.default.transferUserInfo(info)
+            return
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            WCSession.default.sendMessage(info, replyHandler: { reply in
+                if reply["ok"] as? Bool == true {
+                    print("[WC-Watch] transferScoreAsync confirmed: \(trackId)")
+                    continuation.resume()
+                } else {
+                    print("[WC-Watch] transferScoreAsync rejected: \(reply)")
+                    continuation.resume(throwing: WCError.submissionFailed)
+                }
+            }, errorHandler: { error in
+                print("[WC-Watch] transferScoreAsync error: \(error.localizedDescription)")
+                continuation.resume(throwing: error)
+            })
+        }
+    }
+
+    func transferSectorTimesAsync(trackId: String, times: [TimeInterval?]) async throws {
+        let rawTimes = times.map { $0 ?? -1.0 }
+        let info: [String: Any] = ["type": "submitSectorTimes", "trackId": trackId, "times": rawTimes]
+        guard WCSession.default.isReachable else {
+            print("[WC-Watch] transferSectorTimesAsync falling back to transferUserInfo")
+            WCSession.default.transferUserInfo(info)
+            return
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            WCSession.default.sendMessage(info, replyHandler: { reply in
+                if reply["ok"] as? Bool == true {
+                    print("[WC-Watch] transferSectorTimesAsync confirmed: \(trackId)")
+                    continuation.resume()
+                } else {
+                    print("[WC-Watch] transferSectorTimesAsync rejected")
+                    continuation.resume(throwing: WCError.submissionFailed)
+                }
+            }, errorHandler: { error in
+                print("[WC-Watch] transferSectorTimesAsync error: \(error.localizedDescription)")
+                continuation.resume(throwing: error)
+            })
+        }
+    }
 }

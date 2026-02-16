@@ -56,7 +56,7 @@ struct ContentView: View {
                 }
             )
             .onAppear {
-                GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime)
+                Task { try? await GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime) }
             }
 
         case .trackLeaderboard(let trackId, let trackName):

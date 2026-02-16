@@ -26,24 +26,24 @@ final class GameCenterManager: ObservableObject {
     static let shared = GameCenterManager()
     @Published var isAuthenticated: Bool = false
 
-    func submitScore(trackId: String, lapTime: TimeInterval) {
+    func submitScore(trackId: String, lapTime: TimeInterval) async throws {
         #if DEBUG
         if Self.isDevTrack(trackId) {
             print("[GC-Mock] submitScore intercepted: \(trackId) \(lapTime)")
             return
         }
         #endif
-        WatchConnectivityManager.shared.transferScore(trackId: trackId, lapTime: lapTime)
+        try await WatchConnectivityManager.shared.transferScoreAsync(trackId: trackId, lapTime: lapTime)
     }
 
-    func submitSectorTimes(trackId: String, times: [TimeInterval?]) {
+    func submitSectorTimes(trackId: String, times: [TimeInterval?]) async throws {
         #if DEBUG
         if Self.isDevTrack(trackId) {
             print("[GC-Mock] submitSectorTimes intercepted: \(trackId)")
             return
         }
         #endif
-        WatchConnectivityManager.shared.transferSectorTimes(trackId: trackId, times: times)
+        try await WatchConnectivityManager.shared.transferSectorTimesAsync(trackId: trackId, times: times)
     }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
