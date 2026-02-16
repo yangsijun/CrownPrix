@@ -2,21 +2,33 @@ import SwiftUI
 
 struct HomeView: View {
     var onStart: () -> Void
+    @ObservedObject private var gameCenterManager = GameCenterManager.shared
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Spacer()
 
-            Text("Crown Prix")
-                .font(.system(.title, design: .rounded, weight: .bold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            Text("The Tiniest Race on Your Wrist")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            VStack(spacing: 8) {
+                Text("Crown Prix")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                Text("The Tiniest Race on Your Wrist")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                
+                if !gameCenterManager.isAuthenticated {
+                    Text("Sign in to Game Center on your iPhone")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(width: .infinity)
 
             Spacer()
 

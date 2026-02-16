@@ -19,7 +19,7 @@ struct LeaderboardView: View {
                 Text(errorMessage)
                     .foregroundStyle(.secondary)
             } else if entries.isEmpty {
-                Text("No rankings yet")
+                Text("No Lap Times yet")
                     .foregroundStyle(.secondary)
             } else {
                 leaderboardContent
