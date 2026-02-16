@@ -16,8 +16,9 @@ final class CameraController {
     func update(carPosition: CGPoint, carHeading: CGFloat, deltaTime: TimeInterval) {
         let smoothFactor = min(CGFloat(deltaTime) * GameConfig.cameraSmoothSpeed, 1.0)
 
-        let targetX = carPosition.x
-        let targetY = carPosition.y
+        let offset = GameConfig.cameraLookAheadOffset
+        let targetX = carPosition.x + cos(carHeading) * offset
+        let targetY = carPosition.y + sin(carHeading) * offset
         cameraNode.position.x += (targetX - cameraNode.position.x) * smoothFactor
         cameraNode.position.y += (targetY - cameraNode.position.y) * smoothFactor
 

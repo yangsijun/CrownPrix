@@ -3,6 +3,7 @@ import SpriteKit
 final class TimerHUD {
     private let timerLabel: SKLabelNode
     private let speedLabel: SKLabelNode
+    private let speedUnitLabel: SKLabelNode
     private let sectorLabels: [SKLabelNode]
     private let sectorBackgrounds: [SKShapeNode]
     private var elapsedTime: TimeInterval = 0
@@ -21,10 +22,18 @@ final class TimerHUD {
         speedLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         speedLabel.fontSize = 24
         speedLabel.fontColor = SKColor(white: 0.7, alpha: 1)
-        speedLabel.horizontalAlignmentMode = .center
+        speedLabel.horizontalAlignmentMode = .right
         speedLabel.verticalAlignmentMode = .center
         speedLabel.zPosition = 100
-        speedLabel.text = "0 km/h"
+        speedLabel.text = "0"
+
+        speedUnitLabel = SKLabelNode(fontNamed: "Menlo-Bold")
+        speedUnitLabel.fontSize = 24
+        speedUnitLabel.fontColor = SKColor(white: 0.7, alpha: 1)
+        speedUnitLabel.horizontalAlignmentMode = .left
+        speedUnitLabel.verticalAlignmentMode = .center
+        speedUnitLabel.zPosition = 100
+        speedUnitLabel.text = " km/h"
 
         var bgs: [SKShapeNode] = []
         sectorLabels = (0..<3).map { i in
@@ -61,8 +70,12 @@ final class TimerHUD {
             camera.addChild(label)
         }
 
-        speedLabel.position = CGPoint(x: 0, y: -sceneSize.height / 2 + 32)
+        let speedAnchorX = -sceneSize.width / 2 + 90
+        let speedY = -sceneSize.height / 2 + 80
+        speedLabel.position = CGPoint(x: speedAnchorX, y: speedY)
+        speedUnitLabel.position = CGPoint(x: speedAnchorX, y: speedY)
         camera.addChild(speedLabel)
+        camera.addChild(speedUnitLabel)
     }
 
     func start() {
@@ -80,7 +93,7 @@ final class TimerHUD {
         timerLabel.text = String(format: "%d:%02d.%03d", minutes, seconds, millis)
 
         let kmh = Int(speed * GameConfig.displaySpeedScale)
-        speedLabel.text = "\(kmh) km/h"
+        speedLabel.text = "\(kmh)"
     }
 
     func showSectorTime(sector: Int, time: TimeInterval, color: SectorColor) {

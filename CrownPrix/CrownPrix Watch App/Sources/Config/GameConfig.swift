@@ -25,6 +25,7 @@ enum GameConfig {
     // MARK: - Camera
     static let cameraScale: CGFloat = 0.45
     static let cameraSmoothSpeed: CGFloat = 8.0
+    static let cameraLookAheadOffset: CGFloat = 36.0
 
     // MARK: - Collision & Lap
     static let segmentSearchWindow: Int = 40

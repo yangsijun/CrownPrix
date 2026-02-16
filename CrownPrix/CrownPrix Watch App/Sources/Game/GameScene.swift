@@ -61,7 +61,11 @@ final class GameScene: SKScene, ObservableObject {
         let cam = CameraController()
         addChild(cam.cameraNode)
         camera = cam.cameraNode
-        cam.cameraNode.position = car.position
+        let headingOffset = GameConfig.cameraLookAheadOffset
+        cam.cameraNode.position = CGPoint(
+            x: car.position.x + cos(trackData.startHeading) * headingOffset,
+            y: car.position.y + sin(trackData.startHeading) * headingOffset
+        )
         cam.cameraNode.zRotation = trackData.startHeading - .pi / 2
         cameraController = cam
 
