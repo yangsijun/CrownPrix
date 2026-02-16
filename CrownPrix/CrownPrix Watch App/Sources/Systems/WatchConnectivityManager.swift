@@ -1,6 +1,11 @@
 import Combine
 import WatchConnectivity
 
+enum WCError: Error {
+    case phoneNotReachable
+    case submissionFailed
+}
+
 final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDelegate {
     static let shared = WatchConnectivityManager()
     @Published var isPhoneReachable = false

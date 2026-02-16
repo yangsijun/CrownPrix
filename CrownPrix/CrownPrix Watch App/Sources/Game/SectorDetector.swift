@@ -1,12 +1,5 @@
 import Foundation
 
-enum SectorColor {
-    case white
-    case yellow
-    case green
-    case purple
-}
-
 final class SectorDetector {
     private let boundaries: [Int]
     private let totalSegments: Int

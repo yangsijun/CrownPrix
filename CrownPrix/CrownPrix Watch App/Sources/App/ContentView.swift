@@ -4,7 +4,7 @@ enum AppScreen {
     case home
     case trackSelect
     case race(trackId: String)
-    case result(trackId: String, lapTime: TimeInterval)
+    case result(data: RaceCompletionData)
     case trackLeaderboard(trackId: String, trackName: String)
 }
 
@@ -39,24 +39,24 @@ struct ContentView: View {
         case .race(let trackId):
             RaceView(
                 trackId: trackId,
-                onLapComplete: { lapTime in screen = .result(trackId: trackId, lapTime: lapTime) },
+                onLapComplete: { lapTime in screen = .result(data: RaceCompletionData(trackId: trackId, lapTime: lapTime, sectorTimes: [nil, nil, nil], sectorColors: [.white, .white, .white])) },
                 onDNF: { screen = .trackSelect }
             )
 
-        case .result(let trackId, let lapTime):
+        case .result(let data):
             ResultView(
-                trackId: trackId,
-                lapTime: lapTime,
-                onRetry: { screen = .race(trackId: trackId) },
+                trackId: data.trackId,
+                lapTime: data.lapTime,
+                onRetry: { screen = .race(trackId: data.trackId) },
                 onBackToTracks: { screen = .trackSelect },
                 onShowLeaderboard: {
-                    if let track = TrackRegistry.track(byId: trackId) {
-                        screen = .trackLeaderboard(trackId: trackId, trackName: track.displayName)
+                    if let track = TrackRegistry.track(byId: data.trackId) {
+                        screen = .trackLeaderboard(trackId: data.trackId, trackName: track.displayName)
                     }
                 }
             )
             .onAppear {
-                GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
+                GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime)
             }
 
         case .trackLeaderboard(let trackId, let trackName):
