@@ -40,7 +40,7 @@ enum PersistenceManager {
 
     static func saveBestSectorTimes(trackId: String, times: [TimeInterval?]) {
         for (i, time) in times.enumerated() {
-            guard let t = time else { continue }
+            guard let t = time, t > 0 else { continue }
             let key = "bestSector.\(trackId).\(i)"
             let current = UserDefaults.standard.object(forKey: key) as? TimeInterval
             if current == nil || t < current! {
@@ -53,5 +53,20 @@ enum PersistenceManager {
         (0..<3).map { i in
             UserDefaults.standard.object(forKey: "bestSector.\(trackId).\(i)") as? TimeInterval
         }
+    }
+
+    static func cleanupInvalidSectorTimes() {
+        let key = "didCleanupZeroSectors"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+
+        for track in TrackRegistry.allTracks {
+            for i in 0..<3 {
+                let sectorKey = "bestSector.\(track.id).\(i)"
+                if let time = UserDefaults.standard.object(forKey: sectorKey) as? TimeInterval, time <= 0 {
+                    UserDefaults.standard.removeObject(forKey: sectorKey)
+                }
+            }
+        }
+        UserDefaults.standard.set(true, forKey: key)
     }
 }

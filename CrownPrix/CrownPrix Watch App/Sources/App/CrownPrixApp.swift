@@ -7,6 +7,7 @@ struct CrownPrix_Watch_AppApp: App {
             ContentView()
                 .onAppear {
                     WatchConnectivityManager.shared.activate()
+                    PersistenceManager.cleanupInvalidSectorTimes()
                 }
         }
     }
