@@ -101,7 +101,7 @@ final class GameCenterManager: ObservableObject {
                     isLocalPlayer: true
                 ).asDictionary
             }
-            return ["entries": topEntries, "localPlayer": local as Any]
+            return ["entries": topEntries, "localPlayer": local as Any, "totalCount": totalCount]
         } catch {
             print("[GC] loadLeaderboard FAILED \(leaderboardId): \(error)")
             return ["entries": [], "localPlayer": NSNull()]

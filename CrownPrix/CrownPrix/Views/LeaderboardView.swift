@@ -10,6 +10,7 @@ struct LeaderboardView: View {
     @State private var sectorRecords: [GameCenterManager.SectorRecord?] = [nil, nil, nil]
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var totalPlayerCount: Int = 0
 
     var body: some View {
         Group {
@@ -34,9 +35,18 @@ struct LeaderboardView: View {
         let localInTop = entries.contains { $0.isLocalPlayer }
 
         List {
-            Section("Lap Times") {
+            Section {
                 ForEach(entries) { entry in
                     entryRow(entry)
+                }
+                if !localInTop, let localPlayer {
+                    entryRow(localPlayer)
+                }
+            } header: {
+                Text("Lap Times")
+            } footer: {
+                if let localPlayer, totalPlayerCount > 0 {
+                    Text("P\(localPlayer.rank) out of \(totalPlayerCount) Drivers")
                 }
             }
             
@@ -74,11 +84,6 @@ struct LeaderboardView: View {
                 }
             }
 
-            if !localInTop, let localPlayer {
-                Section("Your Rank") {
-                    entryRow(localPlayer)
-                }
-            }
         }
         .refreshable { await fetchAll() }
     }
@@ -119,6 +124,7 @@ struct LeaderboardView: View {
         if let localDict = result["localPlayer"] as? [String: Any] {
             localPlayer = LeaderboardEntry.from(localDict)
         }
+        totalPlayerCount = result["totalCount"] as? Int ?? 0
     }
 
     private func fetchSectorRecords() async {

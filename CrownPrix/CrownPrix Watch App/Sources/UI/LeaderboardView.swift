@@ -71,13 +71,16 @@ struct LeaderboardView: View {
         let localInTop = data.topEntries.contains { $0.isLocalPlayer }
 
         List {
-            ForEach(data.topEntries) { entry in
-                entryRow(entry)
-            }
-
-            if !localInTop, let local = data.localPlayer {
-                Section {
+            Section {
+                ForEach(data.topEntries) { entry in
+                    entryRow(entry)
+                }
+                if !localInTop, let local = data.localPlayer {
                     entryRow(local)
+                }
+            } footer: {
+                if let local = data.localPlayer, data.totalPlayerCount > 0 {
+                    Text("P\(local.rank) out of \(data.totalPlayerCount) Drivers")
                 }
             }
         }

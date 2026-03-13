@@ -20,6 +20,7 @@ struct LeaderboardEntry: Identifiable {
 struct LeaderboardData {
     let topEntries: [LeaderboardEntry]
     let localPlayer: LeaderboardEntry?
+    let totalPlayerCount: Int
 }
 
 final class GameCenterManager: ObservableObject {
@@ -60,7 +61,8 @@ final class GameCenterManager: ObservableObject {
                 if let localDict = reply["localPlayer"] as? [String: Any] {
                     local = LeaderboardEntry.from(localDict)
                 }
-                continuation.resume(returning: LeaderboardData(topEntries: entries, localPlayer: local))
+                let totalCount = reply["totalCount"] as? Int ?? entries.count
+                continuation.resume(returning: LeaderboardData(topEntries: entries, localPlayer: local, totalPlayerCount: totalCount))
             }, errorHandler: { error in
                 continuation.resume(throwing: error)
             })
@@ -188,7 +190,7 @@ final class GameCenterManager: ObservableObject {
             )
         }
         let local = entries.first { $0.isLocalPlayer }
-        return LeaderboardData(topEntries: entries, localPlayer: local)
+        return LeaderboardData(topEntries: entries, localPlayer: local, totalPlayerCount: 247)
     }
 
     private static func mockSectorTimes() -> [TimeInterval?] {
