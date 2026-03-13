@@ -11,6 +11,7 @@ enum AppScreen {
 struct ContentView: View {
     @State private var screen: AppScreen = .home
     @State private var lastTrackId: String?
+    @State private var lastResultData: RaceCompletionData?
 
     var body: some View {
         switch screen {
@@ -55,6 +56,7 @@ struct ContentView: View {
                 }
             )
             .onAppear {
+                lastResultData = data
                 Task { try? await GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime) }
             }
 
@@ -64,7 +66,13 @@ struct ContentView: View {
                     LeaderboardView(
                         leaderboardId: track.leaderboardId,
                         trackName: trackName,
-                        onBack: { screen = .home }
+                        onBack: {
+                            if let data = lastResultData {
+                                screen = .result(data: data)
+                            } else {
+                                screen = .home
+                            }
+                        }
                     )
                 }
             }
