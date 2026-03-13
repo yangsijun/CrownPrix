@@ -69,7 +69,7 @@ struct TrackSelectView: View {
                         .font(.system(.footnote, design: .monospaced))
                         .foregroundStyle(.yellow)
                     if let rank = localRanks[metadata.id] {
-                        Text("#\(rank)")
+                        Text("P\(rank)")
                             .font(.system(.caption2, design: .monospaced))
                             .foregroundStyle(rankColor(for: rank))
                     }

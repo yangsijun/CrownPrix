@@ -24,7 +24,7 @@ struct TrackListView: View {
                                 if let entry = localEntries[meta.id] {
                                     Spacer()
                                     if entry.rank != 0 {
-                                        Text("#\(entry.rank)")
+                                        Text("P\(entry.rank)")
                                             .font(.system(.caption, design: .monospaced, weight: .bold))
                                             .foregroundStyle(rankColor(for: entry.rank))
                                     }

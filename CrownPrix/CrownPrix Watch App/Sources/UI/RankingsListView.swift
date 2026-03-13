@@ -28,7 +28,7 @@ struct RankingsListView: View {
                         HStack(spacing: 8) {
                             Spacer()
                             if entry.rank != 0 {
-                                Text("#\(entry.rank)")
+                                Text("P\(entry.rank)")
                                     .font(.system(.caption2, design: .monospaced, weight: .bold))
                                     .foregroundStyle(rankColor(for: entry.rank))
                             }
