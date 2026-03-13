@@ -4,13 +4,15 @@ struct RankingsListView: View {
     private let tracks = TrackRegistry.allTracks
     @State private var localEntries: [String: LeaderboardEntry] = [:]
     @State private var isSyncing = false
+    var onStartRace: ((String) -> Void)? = nil
 
     var body: some View {
         List(tracks) { meta in
             NavigationLink {
                 LeaderboardView(
                     leaderboardId: meta.leaderboardId,
-                    trackName: meta.displayName
+                    trackName: meta.displayName,
+                    onStartRace: onStartRace != nil ? { onStartRace?(meta.id) } : nil
                 )
             } label: {
                 VStack(alignment: .leading, spacing: 0) {

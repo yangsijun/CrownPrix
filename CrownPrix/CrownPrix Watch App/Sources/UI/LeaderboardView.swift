@@ -4,6 +4,7 @@ struct LeaderboardView: View {
     let leaderboardId: String
     let trackName: String
     var onBack: (() -> Void)? = nil
+    var onStartRace: (() -> Void)? = nil
 
     @State private var data: LeaderboardData?
     @State private var isLoading = true
@@ -40,6 +41,13 @@ struct LeaderboardView: View {
             if let onBack {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: onBack) { Image(systemName: "chevron.backward") }
+                }
+            }
+            if let onStartRace {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: onStartRace) {
+                        Image(systemName: "flag.checkered")
+                    }
                 }
             }
         }

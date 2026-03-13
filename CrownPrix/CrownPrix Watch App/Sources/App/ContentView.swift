@@ -20,7 +20,10 @@ struct ContentView: View {
                 HomeView(onStart: { screen = .trackSelect })
 
                 NavigationStack {
-                    RankingsListView()
+                    RankingsListView(onStartRace: { trackId in
+                        lastTrackId = trackId
+                        screen = .race(trackId: trackId)
+                    })
                 }
             }
             .tabViewStyle(.page)
