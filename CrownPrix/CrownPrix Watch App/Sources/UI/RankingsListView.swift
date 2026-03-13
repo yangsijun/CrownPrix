@@ -30,7 +30,7 @@ struct RankingsListView: View {
                             if entry.rank != 0 {
                                 Text("#\(entry.rank)")
                                     .font(.system(.caption2, design: .monospaced, weight: .bold))
-                                    .foregroundStyle(.yellow)
+                                    .foregroundStyle(rankColor(for: entry.rank))
                             }
                             Group {
                                 if entry.lapTime == .zero {
@@ -105,6 +105,15 @@ struct RankingsListView: View {
             for await (trackId, entry) in group {
                 if let entry { localEntries[trackId] = entry }
             }
+        }
+    }
+
+    private func rankColor(for rank: Int) -> Color {
+        switch rank {
+        case 1: return Color(red: 0.7, green: 0.3, blue: 1.0)
+        case 2, 3: return .green
+        case 4...10: return .yellow
+        default: return .secondary
         }
     }
 }

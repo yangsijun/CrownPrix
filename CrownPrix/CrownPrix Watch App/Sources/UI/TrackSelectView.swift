@@ -70,8 +70,8 @@ struct TrackSelectView: View {
                         .foregroundStyle(.yellow)
                     if let rank = localRanks[metadata.id] {
                         Text("#\(rank)")
-                            .font(.system(.caption2, design: .monospaced, weight: .bold))
-                            .foregroundStyle(.secondary)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(rankColor(for: rank))
                     }
                 } else {
                     Text("—")
@@ -189,6 +189,15 @@ struct TrackSelectView: View {
             }
         }
         localRanks = ranks
+    }
+
+    private func rankColor(for rank: Int) -> Color {
+        switch rank {
+        case 1: return Color(red: 0.7, green: 0.3, blue: 1.0)
+        case 2, 3: return .green
+        case 4...10: return .yellow
+        default: return .secondary
+        }
     }
 }
 
