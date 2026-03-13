@@ -12,7 +12,8 @@ struct RankingsListView: View {
                 LeaderboardView(
                     leaderboardId: meta.leaderboardId,
                     trackName: meta.displayName,
-                    onStartRace: onStartRace != nil ? { onStartRace?(meta.id) } : nil
+                    onStartRace: onStartRace != nil ? { onStartRace?(meta.id) } : nil,
+                    trackId: meta.id
                 )
             } label: {
                 VStack(alignment: .leading, spacing: 0) {

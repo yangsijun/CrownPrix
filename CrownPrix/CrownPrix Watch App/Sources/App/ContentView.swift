@@ -75,7 +75,8 @@ struct ContentView: View {
                             } else {
                                 screen = .home
                             }
-                        }
+                        },
+                        trackId: trackId
                     )
                 }
             }

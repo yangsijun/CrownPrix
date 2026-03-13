@@ -5,10 +5,12 @@ struct LeaderboardView: View {
     let trackName: String
     var onBack: (() -> Void)? = nil
     var onStartRace: (() -> Void)? = nil
+    var trackId: String? = nil
 
     @State private var data: LeaderboardData?
     @State private var isLoading = true
     @State private var errorOccurred = false
+    @State private var sectorRecords: [GameCenterManager.SectorRecord?] = [nil, nil, nil]
 
     var body: some View {
         Group {
@@ -61,7 +63,7 @@ struct LeaderboardView: View {
                 #else
                 guard GameCenterManager.shared.isAuthenticated else { return }
                 #endif
-                await fetchScores()
+                await fetchAll()
             }
         }
     }
@@ -83,6 +85,40 @@ struct LeaderboardView: View {
                     Text("P\(local.rank) out of \(data.totalPlayerCount) Drivers")
                 }
             }
+
+            if sectorRecords.contains(where: { $0 != nil }) {
+                Section("Purple Sectors") {
+                    HStack(spacing: 12) {
+                        ForEach(0..<3, id: \.self) { i in
+                            if let record = sectorRecords[i] {
+                                VStack(spacing: 4) {
+                                    Text("S\(i + 1)")
+                                        .font(.system(.caption2, design: .monospaced, weight: .bold))
+                                        .foregroundStyle(Color(red: 0.7, green: 0.3, blue: 1.0))
+                                    Text(formatSectorTime(record.time))
+                                        .font(.system(.caption, design: .monospaced, weight: .semibold))
+                                    Text(record.playerName)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
+                                .frame(maxWidth: .infinity)
+                            } else {
+                                VStack(spacing: 4) {
+                                    Text("S\(i + 1)")
+                                        .font(.system(.caption2, design: .monospaced, weight: .bold))
+                                        .foregroundStyle(.secondary)
+                                    Text("--.---")
+                                        .font(.system(.caption, design: .monospaced))
+                                        .foregroundStyle(.secondary)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
         }
     }
 
@@ -101,16 +137,33 @@ struct LeaderboardView: View {
         .foregroundStyle(entry.isLocalPlayer ? .yellow : .primary)
     }
 
+    private func formatSectorTime(_ time: TimeInterval) -> String {
+        let totalMillis = Int(time * 1000)
+        let secs = (totalMillis % 60000) / 1000
+        let millis = totalMillis % 1000
+        return String(format: "%02d.%03d", secs, millis)
+    }
+
+    private func fetchAll() async {
+        async let scoresTask: () = fetchScores()
+        async let sectorsTask: () = fetchSectorRecords()
+        _ = await (scoresTask, sectorsTask)
+        isLoading = false
+    }
+
     private func fetchScores() async {
         do {
             data = try await GameCenterManager.shared.loadLeaderboard(
                 leaderboardId: leaderboardId, topCount: 10
             )
-            isLoading = false
         } catch {
             errorOccurred = true
-            isLoading = false
         }
+    }
+
+    private func fetchSectorRecords() async {
+        guard let trackId else { return }
+        sectorRecords = await GameCenterManager.shared.loadSectorRecords(trackId: trackId)
     }
 }
 

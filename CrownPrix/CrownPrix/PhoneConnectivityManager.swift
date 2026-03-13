@@ -98,6 +98,23 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 replyHandler(["bestSectorTimes": bestSectorTimes])
             }
 
+        case "loadSectorRecords":
+            guard let trackId = message["trackId"] as? String else {
+                replyHandler(["records": []])
+                return
+            }
+            Task {
+                let records = await GameCenterManager.shared.loadSectorRecords(trackId: trackId)
+                let dicts: [[String: Any]] = records.map { record in
+                    if let r = record {
+                        return ["playerName": r.playerName, "time": r.time]
+                    } else {
+                        return ["playerName": "", "time": -1.0]
+                    }
+                }
+                replyHandler(["records": dicts])
+            }
+
         default:
             replyHandler(["error": "unknown type"])
         }

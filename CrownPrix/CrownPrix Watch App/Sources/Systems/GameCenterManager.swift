@@ -159,6 +159,35 @@ final class GameCenterManager: ObservableObject {
         }
     }
 
+    struct SectorRecord {
+        let sector: Int
+        let playerName: String
+        let time: TimeInterval
+    }
+
+    func loadSectorRecords(trackId: String) async -> [SectorRecord?] {
+        #if DEBUG
+        if Self.isDevTrack(trackId) {
+            return Self.mockSectorRecords()
+        }
+        #endif
+        return await withCheckedContinuation { continuation in
+            let message: [String: Any] = ["type": "loadSectorRecords", "trackId": trackId]
+            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                let dicts = reply["records"] as? [[String: Any]] ?? []
+                let result: [SectorRecord?] = dicts.enumerated().map { i, dict in
+                    guard let name = dict["playerName"] as? String,
+                          let time = dict["time"] as? Double,
+                          time >= 0 else { return nil }
+                    return SectorRecord(sector: i, playerName: name, time: time)
+                }
+                continuation.resume(returning: result)
+            }, errorHandler: { _ in
+                continuation.resume(returning: [nil, nil, nil])
+            })
+        }
+    }
+
     private var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     }
@@ -195,6 +224,14 @@ final class GameCenterManager: ObservableObject {
 
     private static func mockSectorTimes() -> [TimeInterval?] {
         [25.432, 28.891, 27.677]
+    }
+
+    private static func mockSectorRecords() -> [SectorRecord?] {
+        [
+            SectorRecord(sector: 0, playerName: "Max V.", time: 25.432),
+            SectorRecord(sector: 1, playerName: "Lewis H.", time: 28.891),
+            SectorRecord(sector: 2, playerName: "Charles L.", time: 27.677)
+        ]
     }
     #endif
 }
