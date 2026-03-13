@@ -9,6 +9,7 @@ struct TrackSelectView: View {
     @State private var trackDataCache: [String: TrackData] = [:]
     @State private var selectedTrackId: String?
     @State private var bestTimes: [String: TimeInterval] = [:]
+    @State private var localRanks: [String: Int] = [:]
 
     var body: some View {
         TabView(selection: $selectedTrackId) {
@@ -24,6 +25,7 @@ struct TrackSelectView: View {
             loadLocalBestTimes()
         }
         .task { await syncFromGameCenter() }
+        .task { await loadRanks() }
         .toolbar {
             if let onBack {
                 ToolbarItem(placement: .cancellationAction) {
@@ -66,6 +68,11 @@ struct TrackSelectView: View {
                     Text(TimeFormatter.format(best))
                         .font(.system(.footnote, design: .monospaced))
                         .foregroundStyle(.yellow)
+                    if let rank = localRanks[metadata.id] {
+                        Text("#\(rank)")
+                            .font(.system(.caption2, design: .monospaced, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
                     Text("—")
                         .font(.footnote)
@@ -158,6 +165,30 @@ struct TrackSelectView: View {
         await GameCenterManager.shared.syncBestTimes()
         await GameCenterManager.shared.syncBestSectorTimes()
         loadLocalBestTimes()
+    }
+
+    private func loadRanks() async {
+        #if DEBUG
+        let isAuthed = GameCenterManager.shared.isAuthenticated
+        guard isAuthed || tracks.contains(where: { GameCenterManager.isDevTrack($0.id) }) else { return }
+        #else
+        guard GameCenterManager.shared.isAuthenticated else { return }
+        #endif
+        var ranks: [String: Int] = [:]
+        await withTaskGroup(of: (String, Int?).self) { group in
+            for meta in tracks {
+                group.addTask {
+                    let rank = try? await GameCenterManager.shared
+                        .loadLeaderboard(leaderboardId: meta.leaderboardId, topCount: 1)
+                        .localPlayer?.rank
+                    return (meta.id, rank)
+                }
+            }
+            for await (trackId, rank) in group {
+                if let rank { ranks[trackId] = rank }
+            }
+        }
+        localRanks = ranks
     }
 }
 
