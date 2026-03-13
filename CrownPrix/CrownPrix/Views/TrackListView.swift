@@ -3,6 +3,7 @@ import SwiftUI
 struct TrackListView: View {
     private let tracks = TrackRegistry.allTracks
     @State private var localEntries: [String: LeaderboardEntry] = [:]
+    @Binding var showingAbout: Bool
 
     var body: some View {
         List {
@@ -55,6 +56,13 @@ struct TrackListView: View {
         .navigationTitle("Crown Prix")
         .refreshable { await loadLocalEntries() }
         .task { await loadLocalEntries() }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showingAbout = true } label: {
+                    Image(systemName: "info.circle")
+                }
+            }
+        }
     }
 
     private func loadLocalEntries() async {
@@ -87,7 +95,7 @@ struct TrackListView: View {
 
 #Preview {
     NavigationStack {
-        TrackListView()
+        TrackListView(showingAbout: .constant(false))
     }
     .preferredColorScheme(.dark)
     .tint(.red)
