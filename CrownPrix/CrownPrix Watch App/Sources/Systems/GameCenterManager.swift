@@ -23,6 +23,18 @@ struct LeaderboardData {
     let totalPlayerCount: Int
 }
 
+private final class ResumeOnce: @unchecked Sendable {
+    private let lock = NSLock()
+    private var resumed = false
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !resumed else { return false }
+        resumed = true
+        return true
+    }
+}
+
 final class GameCenterManager: ObservableObject {
     static let shared = GameCenterManager()
     @Published var isAuthenticated: Bool = false
@@ -55,7 +67,9 @@ final class GameCenterManager: ObservableObject {
         #endif
         return try await withCheckedThrowingContinuation { continuation in
             let message: [String: Any] = ["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount]
+            let once = ResumeOnce()
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                guard once.claim() else { return }
                 let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
                 var local: LeaderboardEntry?
                 if let localDict = reply["localPlayer"] as? [String: Any] {
@@ -64,6 +78,7 @@ final class GameCenterManager: ObservableObject {
                 let totalCount = reply["totalCount"] as? Int ?? entries.count
                 continuation.resume(returning: LeaderboardData(topEntries: entries, localPlayer: local, totalPlayerCount: totalCount))
             }, errorHandler: { error in
+                guard once.claim() else { return }
                 continuation.resume(throwing: error)
             })
         }
@@ -82,10 +97,13 @@ final class GameCenterManager: ObservableObject {
         #endif
         return await withCheckedContinuation { continuation in
             let message: [String: Any] = ["type": "loadBestSectorTimes", "trackId": trackId]
+            let once = ResumeOnce()
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                guard once.claim() else { return }
                 let times = (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
                 continuation.resume(returning: times)
             }, errorHandler: { _ in
+                guard once.claim() else { return }
                 continuation.resume(returning: [nil, nil, nil])
             })
         }
@@ -96,10 +114,13 @@ final class GameCenterManager: ObservableObject {
 
         let gcTimes: [String: Double] = await withCheckedContinuation { continuation in
             let message: [String: Any] = ["type": "syncBestTimes"]
+            let once = ResumeOnce()
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                guard once.claim() else { return }
                 let times = reply["bestTimes"] as? [String: Double] ?? [:]
                 continuation.resume(returning: times)
             }, errorHandler: { _ in
+                guard once.claim() else { return }
                 continuation.resume(returning: [:])
             })
         }
@@ -128,9 +149,12 @@ final class GameCenterManager: ObservableObject {
 
         let gcData: [String: [Double]] = await withCheckedContinuation { continuation in
             let message: [String: Any] = ["type": "syncBestSectorTimes"]
+            let once = ResumeOnce()
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                guard once.claim() else { return }
                 continuation.resume(returning: reply["bestSectorTimes"] as? [String: [Double]] ?? [:])
             }, errorHandler: { _ in
+                guard once.claim() else { return }
                 continuation.resume(returning: [:])
             })
         }
@@ -173,7 +197,9 @@ final class GameCenterManager: ObservableObject {
         #endif
         return await withCheckedContinuation { continuation in
             let message: [String: Any] = ["type": "loadSectorRecords", "trackId": trackId]
+            let once = ResumeOnce()
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                guard once.claim() else { return }
                 let dicts = reply["records"] as? [[String: Any]] ?? []
                 let result: [SectorRecord?] = dicts.enumerated().map { i, dict in
                     guard let name = dict["playerName"] as? String,
@@ -183,6 +209,7 @@ final class GameCenterManager: ObservableObject {
                 }
                 continuation.resume(returning: result)
             }, errorHandler: { _ in
+                guard once.claim() else { return }
                 continuation.resume(returning: [nil, nil, nil])
             })
         }
