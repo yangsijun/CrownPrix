@@ -60,6 +60,11 @@ struct RankingsListView: View {
             }
         }
         .task { await loadLocalEntries() }
+        .task(id: isSyncing) {
+            guard isSyncing else { return }
+            try? await Task.sleep(for: .seconds(30))
+            if isSyncing { isSyncing = false }
+        }
     }
 
     private func syncLocalScores() {

@@ -65,23 +65,14 @@ final class GameCenterManager: ObservableObject {
             return Self.mockLeaderboardData()
         }
         #endif
-        return try await withCheckedThrowingContinuation { continuation in
-            let message: [String: Any] = ["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount]
-            let once = ResumeOnce()
-            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
-                guard once.claim() else { return }
-                let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
-                var local: LeaderboardEntry?
-                if let localDict = reply["localPlayer"] as? [String: Any] {
-                    local = LeaderboardEntry.from(localDict)
-                }
-                let totalCount = reply["totalCount"] as? Int ?? entries.count
-                continuation.resume(returning: LeaderboardData(topEntries: entries, localPlayer: local, totalPlayerCount: totalCount))
-            }, errorHandler: { error in
-                guard once.claim() else { return }
-                continuation.resume(throwing: error)
-            })
+        let reply = try await sendMessageWithTimeout(["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount])
+        let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
+        var local: LeaderboardEntry?
+        if let localDict = reply["localPlayer"] as? [String: Any] {
+            local = LeaderboardEntry.from(localDict)
         }
+        let totalCount = reply["totalCount"] as? Int ?? entries.count
+        return LeaderboardData(topEntries: entries, localPlayer: local, totalPlayerCount: totalCount)
     }
 
     func loadTopScores(leaderboardId: String, count: Int) async throws -> [LeaderboardEntry] {
@@ -95,34 +86,23 @@ final class GameCenterManager: ObservableObject {
             return Self.mockSectorTimes()
         }
         #endif
-        return await withCheckedContinuation { continuation in
-            let message: [String: Any] = ["type": "loadBestSectorTimes", "trackId": trackId]
-            let once = ResumeOnce()
-            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
-                guard once.claim() else { return }
-                let times = (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
-                continuation.resume(returning: times)
-            }, errorHandler: { _ in
-                guard once.claim() else { return }
-                continuation.resume(returning: [nil, nil, nil])
-            })
+        do {
+            let reply = try await sendMessageWithTimeout(["type": "loadBestSectorTimes", "trackId": trackId])
+            return (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
+        } catch {
+            return [nil, nil, nil]
         }
     }
 
     func syncBestTimes() async {
         guard isAuthenticated else { return }
 
-        let gcTimes: [String: Double] = await withCheckedContinuation { continuation in
-            let message: [String: Any] = ["type": "syncBestTimes"]
-            let once = ResumeOnce()
-            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
-                guard once.claim() else { return }
-                let times = reply["bestTimes"] as? [String: Double] ?? [:]
-                continuation.resume(returning: times)
-            }, errorHandler: { _ in
-                guard once.claim() else { return }
-                continuation.resume(returning: [:])
-            })
+        let gcTimes: [String: Double]
+        do {
+            let reply = try await sendMessageWithTimeout(["type": "syncBestTimes"])
+            gcTimes = reply["bestTimes"] as? [String: Double] ?? [:]
+        } catch {
+            return
         }
 
         guard !gcTimes.isEmpty else { return }
@@ -147,16 +127,12 @@ final class GameCenterManager: ObservableObject {
     func syncBestSectorTimes() async {
         guard isAuthenticated else { return }
 
-        let gcData: [String: [Double]] = await withCheckedContinuation { continuation in
-            let message: [String: Any] = ["type": "syncBestSectorTimes"]
-            let once = ResumeOnce()
-            WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
-                guard once.claim() else { return }
-                continuation.resume(returning: reply["bestSectorTimes"] as? [String: [Double]] ?? [:])
-            }, errorHandler: { _ in
-                guard once.claim() else { return }
-                continuation.resume(returning: [:])
-            })
+        let gcData: [String: [Double]]
+        do {
+            let reply = try await sendMessageWithTimeout(["type": "syncBestSectorTimes"])
+            gcData = reply["bestSectorTimes"] as? [String: [Double]] ?? [:]
+        } catch {
+            return
         }
 
         for (trackId, gcSectors) in gcData {
@@ -195,22 +171,39 @@ final class GameCenterManager: ObservableObject {
             return Self.mockSectorRecords()
         }
         #endif
-        return await withCheckedContinuation { continuation in
-            let message: [String: Any] = ["type": "loadSectorRecords", "trackId": trackId]
-            let once = ResumeOnce()
+        do {
+            let reply = try await sendMessageWithTimeout(["type": "loadSectorRecords", "trackId": trackId])
+            let dicts = reply["records"] as? [[String: Any]] ?? []
+            return dicts.enumerated().map { i, dict in
+                guard let name = dict["playerName"] as? String,
+                      let time = dict["time"] as? Double,
+                      time >= 0 else { return nil }
+                return SectorRecord(sector: i, playerName: name, time: time)
+            }
+        } catch {
+            return [nil, nil, nil]
+        }
+    }
+
+    private func sendMessageWithTimeout(
+        _ message: [String: Any],
+        timeout: TimeInterval = 10
+    ) async throws -> [String: Any] {
+        let once = ResumeOnce()
+        return try await withCheckedThrowingContinuation { continuation in
+            let timeoutTask = Task {
+                try? await Task.sleep(for: .seconds(timeout))
+                guard !Task.isCancelled, once.claim() else { return }
+                continuation.resume(throwing: WCError.timeout)
+            }
             WatchConnectivityManager.shared.sendMessage(message, replyHandler: { reply in
+                timeoutTask.cancel()
                 guard once.claim() else { return }
-                let dicts = reply["records"] as? [[String: Any]] ?? []
-                let result: [SectorRecord?] = dicts.enumerated().map { i, dict in
-                    guard let name = dict["playerName"] as? String,
-                          let time = dict["time"] as? Double,
-                          time >= 0 else { return nil }
-                    return SectorRecord(sector: i, playerName: name, time: time)
-                }
-                continuation.resume(returning: result)
-            }, errorHandler: { _ in
+                continuation.resume(returning: reply)
+            }, errorHandler: { error in
+                timeoutTask.cancel()
                 guard once.claim() else { return }
-                continuation.resume(returning: [nil, nil, nil])
+                continuation.resume(throwing: error)
             })
         }
     }

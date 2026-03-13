@@ -4,6 +4,7 @@ import WatchConnectivity
 enum WCError: Error {
     case phoneNotReachable
     case submissionFailed
+    case timeout
 }
 
 final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDelegate {
@@ -94,19 +95,24 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             WCSession.default.transferUserInfo(info)
             return
         }
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            WCSession.default.sendMessage(info, replyHandler: { reply in
-                if reply["ok"] as? Bool == true {
-                    print("[WC-Watch] transferScoreAsync confirmed: \(trackId)")
-                    continuation.resume()
-                } else {
-                    print("[WC-Watch] transferScoreAsync rejected: \(reply)")
-                    continuation.resume(throwing: WCError.submissionFailed)
-                }
-            }, errorHandler: { error in
-                print("[WC-Watch] transferScoreAsync error: \(error.localizedDescription)")
-                continuation.resume(throwing: error)
-            })
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                WCSession.default.sendMessage(info, replyHandler: { reply in
+                    if reply["ok"] as? Bool == true {
+                        print("[WC-Watch] transferScoreAsync confirmed: \(trackId)")
+                        continuation.resume()
+                    } else {
+                        print("[WC-Watch] transferScoreAsync rejected: \(reply)")
+                        continuation.resume(throwing: WCError.submissionFailed)
+                    }
+                }, errorHandler: { error in
+                    print("[WC-Watch] transferScoreAsync error: \(error.localizedDescription)")
+                    continuation.resume(throwing: error)
+                })
+            }
+        } catch {
+            print("[WC-Watch] transferScoreAsync failed, falling back to transferUserInfo: \(error.localizedDescription)")
+            WCSession.default.transferUserInfo(info)
         }
     }
 
@@ -118,19 +124,24 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             WCSession.default.transferUserInfo(info)
             return
         }
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            WCSession.default.sendMessage(info, replyHandler: { reply in
-                if reply["ok"] as? Bool == true {
-                    print("[WC-Watch] transferSectorTimesAsync confirmed: \(trackId)")
-                    continuation.resume()
-                } else {
-                    print("[WC-Watch] transferSectorTimesAsync rejected")
-                    continuation.resume(throwing: WCError.submissionFailed)
-                }
-            }, errorHandler: { error in
-                print("[WC-Watch] transferSectorTimesAsync error: \(error.localizedDescription)")
-                continuation.resume(throwing: error)
-            })
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                WCSession.default.sendMessage(info, replyHandler: { reply in
+                    if reply["ok"] as? Bool == true {
+                        print("[WC-Watch] transferSectorTimesAsync confirmed: \(trackId)")
+                        continuation.resume()
+                    } else {
+                        print("[WC-Watch] transferSectorTimesAsync rejected")
+                        continuation.resume(throwing: WCError.submissionFailed)
+                    }
+                }, errorHandler: { error in
+                    print("[WC-Watch] transferSectorTimesAsync error: \(error.localizedDescription)")
+                    continuation.resume(throwing: error)
+                })
+            }
+        } catch {
+            print("[WC-Watch] transferSectorTimesAsync failed, falling back to transferUserInfo: \(error.localizedDescription)")
+            WCSession.default.transferUserInfo(info)
         }
     }
 }
