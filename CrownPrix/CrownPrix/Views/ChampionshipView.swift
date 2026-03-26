@@ -5,8 +5,6 @@ struct ChampionshipView: View {
     @State private var localPlayer: ChampionshipEntry?
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var isSyncingAll = false
-
     var body: some View {
         Group {
             if isLoading {
@@ -22,29 +20,6 @@ struct ChampionshipView: View {
             }
         }
         .navigationTitle("Championship")
-        #if DEBUG
-        .toolbar {
-            ToolbarItem(placement: .bottomBar) {
-                Button {
-                    Task {
-                        isSyncingAll = true
-                        for track in TrackRegistry.allTracks {
-                            await SupabaseManager.shared.syncTrackFromGameCenter(trackId: track.id)
-                        }
-                        isSyncingAll = false
-                        await fetchStandings()
-                    }
-                } label: {
-                    if isSyncingAll {
-                        ProgressView()
-                    } else {
-                        Label("Sync All Tracks", systemImage: "arrow.triangle.2.circlepath")
-                    }
-                }
-                .disabled(isSyncingAll)
-            }
-        }
-        #endif
         .task { await fetchStandings() }
     }
 
@@ -68,7 +43,12 @@ struct ChampionshipView: View {
                 }
             }
         }
-        .refreshable { await fetchStandings() }
+        .refreshable {
+            for track in TrackRegistry.allTracks {
+                await SupabaseManager.shared.syncTrackFromGameCenter(trackId: track.id)
+            }
+            await fetchStandings()
+        }
     }
 
     private func entryRow(_ entry: ChampionshipEntry) -> some View {
