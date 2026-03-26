@@ -120,6 +120,8 @@ final class GameScene: SKScene, ObservableObject {
         sectorDetector = sector
 
         Task {
+            await GameCenterManager.shared.syncTrackBests(trackId: currentTrackId)
+            await MainActor.run { sector.reloadBestSectorTimes() }
             let globalTimes = await GameCenterManager.shared.loadGlobalBestSectorTimes(trackId: currentTrackId)
             await MainActor.run { sector.setGlobalBestSectorTimes(globalTimes) }
         }

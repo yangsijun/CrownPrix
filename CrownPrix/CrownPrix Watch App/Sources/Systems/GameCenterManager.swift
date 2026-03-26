@@ -94,6 +94,32 @@ final class GameCenterManager: ObservableObject {
         }
     }
 
+    func syncTrackBests(trackId: String) async {
+        guard isAuthenticated else {
+            print("[GC] syncTrackBests skipped — not authenticated")
+            return
+        }
+        #if DEBUG
+        if Self.isDevTrack(trackId) { return }
+        #endif
+        do {
+            let reply = try await sendMessageWithTimeout(["type": "syncTrackBests", "trackId": trackId])
+            print("[GC] syncTrackBests reply for \(trackId): lapTime=\(reply["lapTime"] ?? "nil"), sectors=\(reply["sectorTimes"] ?? "nil")")
+            if let lapTime = reply["lapTime"] as? Double, lapTime > 0 {
+                let localBest = PersistenceManager.getBestTime(trackId: trackId)
+                if localBest == nil || lapTime < localBest! {
+                    PersistenceManager.forceSetBestTime(trackId: trackId, time: lapTime)
+                }
+            }
+            if let sectors = reply["sectorTimes"] as? [Double] {
+                let times: [TimeInterval?] = sectors.map { $0 < 0 ? nil : $0 }
+                PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
+            }
+        } catch {
+            print("[GC] syncTrackBests failed for \(trackId): \(error)")
+        }
+    }
+
     func syncBestTimes() async {
         guard isAuthenticated else { return }
 

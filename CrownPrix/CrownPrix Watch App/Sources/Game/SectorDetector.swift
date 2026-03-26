@@ -25,6 +25,10 @@ final class SectorDetector {
         globalBestSectorTimes = times
     }
 
+    func reloadBestSectorTimes() {
+        bestSectorTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
+    }
+
     func startRace() {
         currentSector = 0
         sectorStartTime = 0

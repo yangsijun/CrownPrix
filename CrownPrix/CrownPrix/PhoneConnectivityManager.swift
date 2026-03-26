@@ -1,3 +1,4 @@
+import GameKit
 import WatchConnectivity
 
 final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDelegate {
@@ -113,6 +114,33 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                     }
                 }
                 replyHandler(["records": dicts])
+            }
+
+        case "syncTrackBests":
+            guard let trackId = message["trackId"] as? String else {
+                replyHandler(["lapTime": -1.0, "sectorTimes": [-1.0, -1.0, -1.0]])
+                return
+            }
+            Task {
+                var lapTime: Double = -1.0
+                if let meta = TrackRegistry.track(byId: trackId) {
+                    if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: [meta.leaderboardId]),
+                       let lb = lbs.first,
+                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
+                       let entry = local {
+                        lapTime = Double(entry.score) / 1000.0
+                    }
+                }
+                var sectors: [Double] = [-1.0, -1.0, -1.0]
+                for i in 0..<3 {
+                    if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: ["cp.sector.\(trackId).\(i)"]),
+                       let lb = lbs.first,
+                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
+                       let entry = local {
+                        sectors[i] = Double(entry.score) / 1000.0
+                    }
+                }
+                replyHandler(["lapTime": lapTime, "sectorTimes": sectors])
             }
 
         default:
