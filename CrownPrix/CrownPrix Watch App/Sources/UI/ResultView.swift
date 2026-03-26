@@ -8,15 +8,15 @@ struct ResultView: View {
 
     @State private var savedRecord = false
     @State private var globalBestTime: TimeInterval?
-    @State private var previousBest: TimeInterval?
 
-    init(data: RaceCompletionData, onRetry: @escaping () -> Void, onBackToTracks: @escaping () -> Void, onShowLeaderboard: (() -> Void)? = nil, previewGlobalBest: TimeInterval? = nil, previewPreviousBest: TimeInterval? = nil) {
+    private var previousBest: TimeInterval? { data.previousBestLapTime }
+
+    init(data: RaceCompletionData, onRetry: @escaping () -> Void, onBackToTracks: @escaping () -> Void, onShowLeaderboard: (() -> Void)? = nil, previewGlobalBest: TimeInterval? = nil) {
         self.data = data
         self.onRetry = onRetry
         self.onBackToTracks = onBackToTracks
         self.onShowLeaderboard = onShowLeaderboard
         _globalBestTime = State(initialValue: previewGlobalBest)
-        _previousBest = State(initialValue: previewPreviousBest)
     }
 
     var body: some View {
@@ -54,9 +54,6 @@ struct ResultView: View {
         }
         .task {
             if !savedRecord {
-                if previousBest == nil {
-                    previousBest = PersistenceManager.getBestTime(trackId: data.trackId)
-                }
                 PersistenceManager.saveBestTime(trackId: data.trackId, time: data.lapTime)
                 savedRecord = true
             }
@@ -176,12 +173,12 @@ extension SectorColor {
             trackId: "preview_wr",
             lapTime: 78.123,
             sectorTimes: [23.456, 26.789, 27.878],
-            sectorColors: [.purple, .purple, .green]
+            sectorColors: [.purple, .purple, .green],
+            previousBestLapTime: 80.500
         ),
         onRetry: {},
         onBackToTracks: {},
-        previewGlobalBest: 79.000,
-        previewPreviousBest: 80.500
+        previewGlobalBest: 79.000
     )
 }
 
@@ -191,12 +188,12 @@ extension SectorColor {
             trackId: "preview_nr",
             lapTime: 83.456,
             sectorTimes: [25.432, 28.100, 29.924],
-            sectorColors: [.green, .purple, .yellow]
+            sectorColors: [.green, .purple, .yellow],
+            previousBestLapTime: 84.000
         ),
         onRetry: {},
         onBackToTracks: {},
-        previewGlobalBest: 80.000,
-        previewPreviousBest: 84.000
+        previewGlobalBest: 80.000
     )
 }
 
@@ -206,11 +203,11 @@ extension SectorColor {
             trackId: "preview_nb",
             lapTime: 83.456,
             sectorTimes: [25.432, 28.891, 29.133],
-            sectorColors: [.yellow, .green, .yellow]
+            sectorColors: [.yellow, .green, .yellow],
+            previousBestLapTime: 80.000
         ),
         onRetry: {},
         onBackToTracks: {},
-        previewGlobalBest: 78.500,
-        previewPreviousBest: 80.000
+        previewGlobalBest: 78.500
     )
 }

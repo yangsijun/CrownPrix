@@ -84,6 +84,7 @@ final class GameScene: SKScene, ObservableObject {
         lap.onLapComplete = { [weak self] in
             guard let self, let timer = self.timerHUD else { return }
             let lapTime = timer.currentTime
+            let previousBest = PersistenceManager.getBestTime(trackId: currentTrackId)
             let isNew = PersistenceManager.isNewRecord(trackId: currentTrackId, time: lapTime)
             timer.freeze(isNewRecord: isNew)
 
@@ -105,7 +106,8 @@ final class GameScene: SKScene, ObservableObject {
                 trackId: currentTrackId,
                 lapTime: lapTime,
                 sectorTimes: sectorTimes,
-                sectorColors: sectorColors
+                sectorColors: sectorColors,
+                previousBestLapTime: previousBest
             )
             self.onLapComplete?(data)
         }

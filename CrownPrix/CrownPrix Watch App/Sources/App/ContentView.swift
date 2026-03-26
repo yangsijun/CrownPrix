@@ -12,6 +12,7 @@ struct ContentView: View {
     @State private var screen: AppScreen = .home
     @State private var lastTrackId: String?
     @State private var lastResultData: RaceCompletionData?
+    @State private var scoreSubmissionTask: Task<Void, Never>?
 
     var body: some View {
         switch screen {
@@ -60,7 +61,9 @@ struct ContentView: View {
             )
             .onAppear {
                 lastResultData = data
-                Task { try? await GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime) }
+                scoreSubmissionTask = Task {
+                    try? await GameCenterManager.shared.submitScore(trackId: data.trackId, lapTime: data.lapTime)
+                }
             }
 
         case .trackLeaderboard(let trackId, let trackName):
@@ -76,7 +79,9 @@ struct ContentView: View {
                                 screen = .home
                             }
                         },
-                        trackId: trackId
+                        trackId: trackId,
+                        pendingSubmission: scoreSubmissionTask,
+                        submittedLapTime: lastResultData?.lapTime
                     )
                 }
             }

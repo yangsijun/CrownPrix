@@ -6,10 +6,13 @@ struct LeaderboardView: View {
     var onBack: (() -> Void)? = nil
     var onStartRace: (() -> Void)? = nil
     var trackId: String? = nil
+    var pendingSubmission: Task<Void, Never>? = nil
+    var submittedLapTime: TimeInterval? = nil
 
     @State private var data: LeaderboardData?
     @State private var isLoading = true
     @State private var errorOccurred = false
+    @State private var isSyncing = false
     @State private var sectorRecords: [GameCenterManager.SectorRecord?] = [nil, nil, nil]
 
     var body: some View {
@@ -45,25 +48,49 @@ struct LeaderboardView: View {
                     Button(action: onBack) { Image(systemName: "chevron.backward") }
                 }
             }
-            if let onStartRace {
-                ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let onStartRace {
                     Button(action: onStartRace) {
                         Image(systemName: "flag.checkered")
+                    }
+                } else {
+                    Button {
+                        Task {
+                            isLoading = true
+                            await fetchAll()
+                        }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
                     }
                 }
             }
         }
-        .onAppear {
+        .task {
             isLoading = true
             errorOccurred = false
             data = nil
-            Task {
-                #if DEBUG
-                guard GameCenterManager.shared.isAuthenticated || GameCenterManager.isDevLeaderboard(leaderboardId) else { return }
-                #else
-                guard GameCenterManager.shared.isAuthenticated else { return }
-                #endif
-                await fetchAll()
+            #if DEBUG
+            guard GameCenterManager.shared.isAuthenticated || GameCenterManager.isDevLeaderboard(leaderboardId) else { return }
+            #else
+            guard GameCenterManager.shared.isAuthenticated else { return }
+            #endif
+            await pendingSubmission?.value
+            await fetchAll()
+
+            // Game Center has eventual consistency — a submitted score may not
+            // appear in loadEntries immediately. Only retry when a new personal
+            // best was submitted but not yet reflected in the leaderboard.
+            if let submitted = submittedLapTime {
+                let gcBest = data?.localPlayer?.lapTime ?? .infinity
+                if submitted < gcBest {
+                    isSyncing = true
+                    for _ in 0..<5 {
+                        try? await Task.sleep(for: .seconds(2))
+                        await fetchAll()
+                        if data?.localPlayer?.lapTime ?? .infinity <= submitted { break }
+                    }
+                    isSyncing = false
+                }
             }
         }
     }
@@ -79,6 +106,16 @@ struct LeaderboardView: View {
                 }
                 if !localInTop, let local = data.localPlayer {
                     entryRow(local)
+                }
+            } header: {
+                if isSyncing {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .scaleEffect(0.5)
+                        Text("Syncing...")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
             } footer: {
                 if let local = data.localPlayer, data.totalPlayerCount > 0 {

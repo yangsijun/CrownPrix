@@ -5,6 +5,7 @@ struct RaceCompletionData {
     let lapTime: TimeInterval
     let sectorTimes: [TimeInterval?]
     let sectorColors: [SectorColor]
+    let previousBestLapTime: TimeInterval?
 }
 
 struct RaceResult {
