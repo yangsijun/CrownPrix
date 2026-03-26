@@ -191,6 +191,11 @@ final class GameCenterManager: ObservableObject {
         let time: TimeInterval
     }
 
+    func submitLapTimeToSupabase(trackId: String, lapTime: TimeInterval) async throws {
+        let lapTimeMs = Int(lapTime * 1000)
+        _ = try await sendMessageWithTimeout(["type": "submitLapTimeToSupabase", "trackId": trackId, "lapTimeMs": lapTimeMs])
+    }
+
     func loadChampionshipStandings(topCount: Int = 20) async throws -> (entries: [ChampionshipEntry], localPlayer: ChampionshipEntry?) {
         let reply = try await sendMessageWithTimeout(["type": "loadChampionship", "topCount": topCount])
         let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { ChampionshipEntry.from($0) }

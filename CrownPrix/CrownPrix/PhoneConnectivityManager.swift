@@ -190,6 +190,27 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 }
             }
 
+        case "submitLapTimeToSupabase":
+            guard let trackId = message["trackId"] as? String,
+                  let lapTimeMs = message["lapTimeMs"] as? Int else {
+                replyHandler(["ok": false])
+                return
+            }
+            let player = GKLocalPlayer.local
+            guard player.isAuthenticated else {
+                replyHandler(["ok": false])
+                return
+            }
+            Task {
+                try? await SupabaseManager.shared.submitLapTime(
+                    playerId: player.gamePlayerID,
+                    playerName: player.displayName,
+                    trackId: trackId,
+                    lapTimeMs: lapTimeMs
+                )
+                replyHandler(["ok": true])
+            }
+
         case "syncAllTracks":
             Task {
                 for track in TrackRegistry.allTracks {

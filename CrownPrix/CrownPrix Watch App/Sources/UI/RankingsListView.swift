@@ -77,6 +77,8 @@ struct RankingsListView: View {
                 if sectorTimes.contains(where: { $0 != nil }) {
                     try? await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: sectorTimes)
                 }
+                // Also submit to Supabase via WC
+                try? await GameCenterManager.shared.submitLapTimeToSupabase(trackId: trackId, lapTime: lapTime)
             }
             await loadLocalEntries()
             isSyncing = false
