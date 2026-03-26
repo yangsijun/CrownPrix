@@ -6,9 +6,23 @@ struct ContentView: View {
     @State private var showingAbout = false
 
     var body: some View {
-        NavigationStack {
+        Group {
             if gcManager.isAuthenticated {
-                TrackListView(showingAbout: $showingAbout)
+                TabView {
+                    NavigationStack {
+                        TrackListView(showingAbout: $showingAbout)
+                    }
+                    .tabItem {
+                        Label("Rankings", systemImage: "list.number")
+                    }
+
+                    NavigationStack {
+                        ChampionshipView()
+                    }
+                    .tabItem {
+                        Label("Championship", systemImage: "trophy.fill")
+                    }
+                }
             } else {
                 VStack(spacing: 20) {
                     Image(systemName: "gamecontroller.fill")
