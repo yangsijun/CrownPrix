@@ -191,6 +191,26 @@ final class GameCenterManager: ObservableObject {
         let time: TimeInterval
     }
 
+    func loadChampionshipStandings(topCount: Int = 20) async throws -> (entries: [ChampionshipEntry], localPlayer: ChampionshipEntry?) {
+        let reply = try await sendMessageWithTimeout(["type": "loadChampionship", "topCount": topCount])
+        let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { ChampionshipEntry.from($0) }
+        var local: ChampionshipEntry?
+        if let localDict = reply["localPlayer"] as? [String: Any] {
+            local = ChampionshipEntry.from(localDict)
+        }
+        return (entries, local)
+    }
+
+    func syncAllTracksToSupabase() async {
+        _ = try? await sendMessageWithTimeout(["type": "syncAllTracks"], timeout: 120)
+    }
+
+    func loadChampionshipDetail(playerId: String) async throws -> ChampionshipDetail? {
+        let reply = try await sendMessageWithTimeout(["type": "loadChampionshipDetail", "playerId": playerId])
+        guard let detailDict = reply["detail"] as? [String: Any] else { return nil }
+        return ChampionshipDetail.from(detailDict)
+    }
+
     func loadSectorRecords(trackId: String) async -> [SectorRecord?] {
         #if DEBUG
         if Self.isDevTrack(trackId) {

@@ -180,6 +180,44 @@ final class GameCenterManager: ObservableObject {
         return result
     }
 
+    struct LeaderboardPlayerEntry {
+        let playerId: String
+        let playerName: String
+        let lapTimeMs: Int
+    }
+
+    /// Load top N entries from ALL track leaderboards, including each player's gamePlayerID.
+    /// Used by SupabaseManager.reconcileFromGameCenter() to backfill all players' times.
+    func loadAllTrackEntries(topCount: Int = 100) async -> [String: [LeaderboardPlayerEntry]] {
+        guard isAuthenticated else { return [:] }
+        var result: [String: [LeaderboardPlayerEntry]] = [:]
+
+        let allLeaderboardIDs = TrackRegistry.allTracks.map { $0.leaderboardId }
+        let trackIDByLeaderboard = Dictionary(uniqueKeysWithValues: TrackRegistry.allTracks.map { ($0.leaderboardId, $0.id) })
+
+        do {
+            let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: allLeaderboardIDs)
+            for lb in leaderboards {
+                guard let trackId = trackIDByLeaderboard[lb.baseLeaderboardID] else { continue }
+                do {
+                    let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
+                    result[trackId] = entries.map { entry in
+                        LeaderboardPlayerEntry(
+                            playerId: entry.player.gamePlayerID,
+                            playerName: entry.player.displayName,
+                            lapTimeMs: entry.score
+                        )
+                    }
+                } catch {
+                    print("[GC] loadAllTrackEntries failed for \(trackId): \(error)")
+                }
+            }
+        } catch {
+            print("[GC] loadLeaderboards batch failed: \(error)")
+        }
+        return result
+    }
+
     struct SectorRecord {
         let sector: Int
         let playerName: String

@@ -10,6 +10,8 @@
 		AA240F0D2F2C0000000D0EFA /* CrownPrix Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = ED240F8B2F2BAC41000D0EFA /* CrownPrix Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		ED240FE42F2BFEBC000D0EFA /* SVGPath in Frameworks */ = {isa = PBXBuildFile; productRef = ED240FAD2F2BAC43000D0EFA /* SVGPath */; };
 		ED240FE52F2BFEBC000D0EFA /* SVGPath in Frameworks */ = {isa = PBXBuildFile; productRef = ED240FAE2F2BAC43000D0EFA /* SVGPath */; };
+		EDB5AB0B2F7565C000D92749 /* PostgREST in Frameworks */ = {isa = PBXBuildFile; productRef = EDB5AB0A2F7565C000D92749 /* PostgREST */; };
+		EDB5AB0E2F75676300D92749 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = EDB5AB0D2F75676300D92749 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +87,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDB5AB0E2F75676300D92749 /* Supabase in Frameworks */,
+				EDB5AB0B2F7565C000D92749 /* PostgREST in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -232,6 +236,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				ED240FAC2F2BAC43000D0EFA /* XCRemoteSwiftPackageReference "SVGPath" */,
+				EDB5AB0C2F75676300D92749 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = ED240F8C2F2BAC41000D0EFA /* Products */;
@@ -309,6 +314,8 @@
 /* Begin XCBuildConfiguration section */
 		AA240F082F2C0000000D0EFA /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = AA240F022F2C0000000D0EFA /* CrownPrix */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
 				CODE_SIGN_ENTITLEMENTS = CrownPrix/CrownPrix.entitlements;
@@ -343,6 +350,8 @@
 		};
 		AA240F092F2C0000000D0EFA /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReferenceAnchor = AA240F022F2C0000000D0EFA /* CrownPrix */;
+			baseConfigurationReferenceRelativePath = Secrets.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = CrownPrixIcon;
 				CODE_SIGN_ENTITLEMENTS = CrownPrix/CrownPrix.entitlements;
@@ -539,8 +548,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9ZMW52M7L5;
-				EXCLUDED_SOURCE_FILE_NAMES = AGENTS.md;
 				ENABLE_PREVIEWS = YES;
+				EXCLUDED_SOURCE_FILE_NAMES = AGENTS.md;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Crown Prix";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
@@ -666,6 +675,22 @@
 				minimumVersion = 1.1.4;
 			};
 		};
+		EDB5AB092F7565C000D92749 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
+		EDB5AB0C2F75676300D92749 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.5.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -678,6 +703,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = ED240FAC2F2BAC43000D0EFA /* XCRemoteSwiftPackageReference "SVGPath" */;
 			productName = SVGPath;
+		};
+		EDB5AB0A2F7565C000D92749 /* PostgREST */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EDB5AB092F7565C000D92749 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = PostgREST;
+		};
+		EDB5AB0D2F75676300D92749 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EDB5AB0C2F75676300D92749 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

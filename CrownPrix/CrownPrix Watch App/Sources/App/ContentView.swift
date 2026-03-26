@@ -26,6 +26,10 @@ struct ContentView: View {
                         screen = .race(trackId: trackId)
                     })
                 }
+
+                NavigationStack {
+                    ChampionshipView()
+                }
             }
             .tabViewStyle(.page)
 

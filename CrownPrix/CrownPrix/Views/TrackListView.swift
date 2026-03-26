@@ -8,6 +8,20 @@ struct TrackListView: View {
     var body: some View {
         List {
             Section {
+                NavigationLink {
+                    ChampionshipView()
+                } label: {
+                    HStack {
+                        Image(systemName: "trophy.fill")
+                            .foregroundStyle(.yellow)
+                        Text("World Drivers' Championship")
+                            .font(.body)
+                        Spacer()
+                    }
+                }
+            }
+
+            Section {
                 ForEach(tracks) { meta in
                     NavigationLink {
                         LeaderboardView(leaderboardId: meta.leaderboardId, trackName: meta.displayName, trackId: meta.id)

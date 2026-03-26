@@ -41,12 +41,31 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             }
             print("[WC-Phone] submitScore trackId=\(trackId) lapTime=\(lapTime)")
             Task {
+                // 1. Submit to Game Center (existing -- unchanged)
                 do {
                     try await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
                     replyHandler(["ok": true])
                 } catch {
                     print("[WC-Phone] submitScore failed: \(error)")
                     replyHandler(["ok": false, "error": error.localizedDescription])
+                }
+
+                // 2. Submit own lap time to Supabase (fire-and-forget)
+                let player = GKLocalPlayer.local
+                guard player.isAuthenticated else { return }
+                #if DEBUG
+                guard trackId != "dev" else { return }
+                #endif
+                let lapTimeMs = Int(lapTime * 1000)
+                do {
+                    try await SupabaseManager.shared.submitLapTime(
+                        playerId: player.gamePlayerID,
+                        playerName: player.displayName,
+                        trackId: trackId,
+                        lapTimeMs: lapTimeMs
+                    )
+                } catch {
+                    print("[Supabase] submitLapTime failed: \(error)")
                 }
             }
 
@@ -146,6 +165,57 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 replyHandler(["lapTime": lapTime, "sectorTimes": sectors])
             }
 
+        case "loadChampionship":
+            let topCount = message["topCount"] as? Int ?? 20
+            Task {
+                do {
+                    let standings = try await SupabaseManager.shared.loadStandings(limit: topCount)
+                    let standingsDicts = standings.map { $0.asDictionary }
+                    let localPlayerId = GKLocalPlayer.local.gamePlayerID
+                    var localPlayerDict: [String: Any]? = nil
+                    if let local = standings.first(where: { $0.playerId == localPlayerId }) {
+                        localPlayerDict = local.asDictionary
+                    } else if GKLocalPlayer.local.isAuthenticated,
+                              let local = try? await SupabaseManager.shared.loadPlayerStanding(playerId: localPlayerId) {
+                        localPlayerDict = local.asDictionary
+                    }
+                    var reply: [String: Any] = ["entries": standingsDicts]
+                    if let localPlayerDict {
+                        reply["localPlayer"] = localPlayerDict
+                    }
+                    replyHandler(reply)
+                } catch {
+                    print("[WC-Phone] loadChampionship failed: \(error)")
+                    replyHandler(["entries": [], "error": error.localizedDescription])
+                }
+            }
+
+        case "syncAllTracks":
+            Task {
+                for track in TrackRegistry.allTracks {
+                    await SupabaseManager.shared.syncTrackFromGameCenter(trackId: track.id)
+                }
+                replyHandler(["ok": true])
+            }
+
+        case "loadChampionshipDetail":
+            guard let playerId = message["playerId"] as? String else {
+                replyHandler(["error": "missing playerId"])
+                return
+            }
+            Task {
+                do {
+                    if let detail = try await SupabaseManager.shared.loadPlayerDetail(playerId: playerId) {
+                        replyHandler(["detail": detail.asDictionary])
+                    } else {
+                        replyHandler(["error": "player not found"])
+                    }
+                } catch {
+                    print("[WC-Phone] loadChampionshipDetail failed: \(error)")
+                    replyHandler(["error": error.localizedDescription])
+                }
+            }
+
         default:
             replyHandler(["error": "unknown type"])
         }
@@ -160,7 +230,25 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             guard let trackId = userInfo["trackId"] as? String,
                   let lapTime = userInfo["lapTime"] as? Double else { return }
             print("[WC-Phone] userInfo submitScore trackId=\(trackId) lapTime=\(lapTime)")
+            // GC submission (existing, unchanged)
             Task { try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime) }
+
+            // Submit own lap time to Supabase (fire-and-forget)
+            #if DEBUG
+            guard trackId != "dev" else { break }
+            #endif
+            let player = GKLocalPlayer.local
+            if player.isAuthenticated {
+                let lapTimeMs = Int(lapTime * 1000)
+                Task {
+                    try? await SupabaseManager.shared.submitLapTime(
+                        playerId: player.gamePlayerID,
+                        playerName: player.displayName,
+                        trackId: trackId,
+                        lapTimeMs: lapTimeMs
+                    )
+                }
+            }
 
         case "submitSectorTimes":
             guard let trackId = userInfo["trackId"] as? String,
