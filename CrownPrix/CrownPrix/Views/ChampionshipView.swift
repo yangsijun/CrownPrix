@@ -1,18 +1,18 @@
 import SwiftUI
 
 struct ChampionshipView: View {
-    @State private var entries: [ChampionshipEntry] = []
-    @State private var localPlayer: ChampionshipEntry?
+    @State private var standings: [GameCenterManager.ChampionshipStanding] = []
+    @State private var localPlayer: GameCenterManager.ChampionshipStanding?
     @State private var isLoading = true
-    @State private var errorMessage: String?
+
     var body: some View {
         Group {
-            if isLoading {
-                ProgressView()
-            } else if let errorMessage {
-                Text(errorMessage)
+            if !GameCenterManager.shared.isAuthenticated {
+                Text("Sign in to Game Center")
                     .foregroundStyle(.secondary)
-            } else if entries.isEmpty {
+            } else if isLoading {
+                ProgressView()
+            } else if standings.isEmpty {
                 Text("No standings yet")
                     .foregroundStyle(.secondary)
             } else {
@@ -25,64 +25,46 @@ struct ChampionshipView: View {
 
     @ViewBuilder
     private var standingsContent: some View {
-        let localInTop = localPlayer.map { local in entries.contains { $0.id == local.id } } ?? false
-
         List {
             Section {
-                ForEach(entries) { entry in
-                    entryRow(entry)
-                }
-                if !localInTop, let local = localPlayer {
-                    entryRow(local)
+                ForEach(Array(standings.enumerated()), id: \.element.playerName) { index, standing in
+                    NavigationLink {
+                        ChampionshipDetailView(standing: standing, rank: index + 1)
+                    } label: {
+                        HStack {
+                            Text("\(index + 1)")
+                                .font(.system(.body, design: .monospaced).bold())
+                                .frame(width: 36, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                MarqueeText(text: standing.playerName, font: .body, staticAlignment: .leading)
+                                Text("\(standing.tracksEntered) track\(standing.tracksEntered == 1 ? "" : "s")")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text("\(standing.totalPoints) pts")
+                                .font(.system(.body, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                        .foregroundStyle(standing.isLocalPlayer ? .red : .primary)
+                    }
                 }
             } header: {
                 Text("Standings")
             } footer: {
-                if let local = localPlayer, local.totalPoints > 0 {
-                    Text("P\(local.rank) — \(local.totalPoints) pts across \(local.tracksEntered) track\(local.tracksEntered == 1 ? "" : "s")")
+                if let local = localPlayer,
+                   let rank = standings.firstIndex(where: { $0.isLocalPlayer }) {
+                    Text("P\(rank + 1) — \(local.totalPoints) pts across \(local.tracksEntered) track\(local.tracksEntered == 1 ? "" : "s")")
                 }
             }
         }
-        .refreshable {
-            for track in TrackRegistry.allTracks {
-                await SupabaseManager.shared.syncTrackFromGameCenter(trackId: track.id)
-            }
-            await fetchStandings()
-        }
-    }
-
-    private func entryRow(_ entry: ChampionshipEntry) -> some View {
-        NavigationLink {
-            ChampionshipDetailView(playerId: entry.playerId, playerName: entry.playerName)
-        } label: {
-            HStack {
-                Text("\(entry.rank)")
-                    .font(.system(.body, design: .monospaced).bold())
-                    .frame(width: 36, alignment: .leading)
-                VStack(alignment: .leading, spacing: 2) {
-                    MarqueeText(text: entry.playerName, font: .body, staticAlignment: .leading)
-                    Text("\(entry.tracksEntered) track\(entry.tracksEntered == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Text("\(entry.totalPoints) pts")
-                    .font(.system(.body, design: .monospaced))
-                    .foregroundStyle(.secondary)
-            }
-            .foregroundStyle(entry.isLocalPlayer ? .red : .primary)
-        }
+        .refreshable { await fetchStandings() }
     }
 
     private func fetchStandings() async {
-        errorMessage = nil
-        do {
-            let result = try await SupabaseManager.shared.loadStandings(limit: 50)
-            entries = result
-            localPlayer = result.first { $0.isLocalPlayer }
-        } catch {
-            errorMessage = "Unable to load championship"
-        }
+        let result = await GameCenterManager.shared.calculateChampionship()
+        standings = result.standings
+        localPlayer = result.localPlayer
         isLoading = false
     }
 }

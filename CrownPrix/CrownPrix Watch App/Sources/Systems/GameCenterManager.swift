@@ -206,12 +206,8 @@ final class GameCenterManager: ObservableObject {
         return (entries, local)
     }
 
-    func syncAllTracksToSupabase() async {
-        _ = try? await sendMessageWithTimeout(["type": "syncAllTracks"], timeout: 120)
-    }
-
-    func loadChampionshipDetail(playerId: String) async throws -> ChampionshipDetail? {
-        let reply = try await sendMessageWithTimeout(["type": "loadChampionshipDetail", "playerId": playerId])
+    func loadChampionshipDetail(playerName: String) async throws -> ChampionshipDetail? {
+        let reply = try await sendMessageWithTimeout(["type": "loadChampionshipDetail", "playerName": playerName])
         guard let detailDict = reply["detail"] as? [String: Any] else { return nil }
         return ChampionshipDetail.from(detailDict)
     }

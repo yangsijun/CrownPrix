@@ -180,42 +180,79 @@ final class GameCenterManager: ObservableObject {
         return result
     }
 
-    struct LeaderboardPlayerEntry {
-        let playerId: String
-        let playerName: String
-        let lapTimeMs: Int
+    private static let f1Points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+
+    struct ChampionshipResult {
+        let standings: [ChampionshipStanding]
+        let localPlayer: ChampionshipStanding?
     }
 
-    /// Load top N entries from ALL track leaderboards, including each player's gamePlayerID.
-    /// Used by SupabaseManager.reconcileFromGameCenter() to backfill all players' times.
-    func loadAllTrackEntries(topCount: Int = 100) async -> [String: [LeaderboardPlayerEntry]] {
-        guard isAuthenticated else { return [:] }
-        var result: [String: [LeaderboardPlayerEntry]] = [:]
+    struct ChampionshipStanding {
+        let playerName: String
+        let totalPoints: Int
+        let tracksEntered: Int
+        let isLocalPlayer: Bool
+        let trackResults: [TrackResult]
+
+        struct TrackResult {
+            let trackId: String
+            let trackName: String
+            let flag: String
+            let rank: Int
+            let points: Int
+        }
+    }
+
+    /// Calculate championship standings locally from GC leaderboard data.
+    /// Fetches top 10 from each track, aggregates by displayName, returns sorted standings.
+    func calculateChampionship(topPerTrack: Int = 10) async -> ChampionshipResult {
+        guard isAuthenticated else { return ChampionshipResult(standings: [], localPlayer: nil) }
 
         let allLeaderboardIDs = TrackRegistry.allTracks.map { $0.leaderboardId }
-        let trackIDByLeaderboard = Dictionary(uniqueKeysWithValues: TrackRegistry.allTracks.map { ($0.leaderboardId, $0.id) })
+        let trackByLeaderboard = Dictionary(uniqueKeysWithValues: TrackRegistry.allTracks.map { ($0.leaderboardId, $0) })
+        let localName = GKLocalPlayer.local.displayName
+
+        // playerName -> [TrackResult]
+        var playerTracks: [String: [ChampionshipStanding.TrackResult]] = [:]
 
         do {
             let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: allLeaderboardIDs)
             for lb in leaderboards {
-                guard let trackId = trackIDByLeaderboard[lb.baseLeaderboardID] else { continue }
+                guard let meta = trackByLeaderboard[lb.baseLeaderboardID] else { continue }
                 do {
-                    let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
-                    result[trackId] = entries.map { entry in
-                        LeaderboardPlayerEntry(
-                            playerId: entry.player.gamePlayerID,
-                            playerName: entry.player.displayName,
-                            lapTimeMs: entry.score
+                    let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topPerTrack))
+                    for entry in entries {
+                        let rank = entry.rank
+                        let pts = rank <= Self.f1Points.count ? Self.f1Points[rank - 1] : 0
+                        let result = ChampionshipStanding.TrackResult(
+                            trackId: meta.id,
+                            trackName: meta.displayName,
+                            flag: meta.flag,
+                            rank: rank,
+                            points: pts
                         )
+                        playerTracks[entry.player.displayName, default: []].append(result)
                     }
                 } catch {
-                    print("[GC] loadAllTrackEntries failed for \(trackId): \(error)")
+                    print("[GC] calculateChampionship failed for \(meta.id): \(error)")
                 }
             }
         } catch {
             print("[GC] loadLeaderboards batch failed: \(error)")
         }
-        return result
+
+        let standings = playerTracks.map { (name, tracks) in
+            ChampionshipStanding(
+                playerName: name,
+                totalPoints: tracks.reduce(0) { $0 + $1.points },
+                tracksEntered: tracks.count,
+                isLocalPlayer: name == localName,
+                trackResults: tracks.sorted { $0.points > $1.points }
+            )
+        }.sorted { $0.totalPoints > $1.totalPoints }
+
+        let localPlayer = standings.first { $0.isLocalPlayer }
+        return ChampionshipResult(standings: standings, localPlayer: localPlayer)
     }
 
     struct SectorRecord {

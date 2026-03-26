@@ -166,28 +166,28 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             }
 
         case "loadChampionship":
-            let topCount = message["topCount"] as? Int ?? 20
             Task {
-                do {
-                    let standings = try await SupabaseManager.shared.loadStandings(limit: topCount)
-                    let standingsDicts = standings.map { $0.asDictionary }
-                    let localPlayerId = GKLocalPlayer.local.gamePlayerID
-                    var localPlayerDict: [String: Any]? = nil
-                    if let local = standings.first(where: { $0.playerId == localPlayerId }) {
-                        localPlayerDict = local.asDictionary
-                    } else if GKLocalPlayer.local.isAuthenticated,
-                              let local = try? await SupabaseManager.shared.loadPlayerStanding(playerId: localPlayerId) {
-                        localPlayerDict = local.asDictionary
-                    }
-                    var reply: [String: Any] = ["entries": standingsDicts]
-                    if let localPlayerDict {
-                        reply["localPlayer"] = localPlayerDict
-                    }
-                    replyHandler(reply)
-                } catch {
-                    print("[WC-Phone] loadChampionship failed: \(error)")
-                    replyHandler(["entries": [], "error": error.localizedDescription])
+                let result = await GameCenterManager.shared.calculateChampionship()
+                let entriesDicts: [[String: Any]] = result.standings.enumerated().map { (i, s) in
+                    var d: [String: Any] = [
+                        "rank": i + 1, "playerName": s.playerName,
+                        "totalPoints": s.totalPoints, "tracksEntered": s.tracksEntered,
+                        "isLocalPlayer": s.isLocalPlayer, "playerId": s.playerName
+                    ]
+                    d["trackResults"] = s.trackResults.map { [
+                        "trackId": $0.trackId, "trackName": $0.trackName, "flag": $0.flag,
+                        "rank": $0.rank, "points": $0.points
+                    ] }
+                    return d
                 }
+                var reply: [String: Any] = ["entries": entriesDicts]
+                if let local = result.localPlayer,
+                   let localIdx = result.standings.firstIndex(where: { $0.isLocalPlayer }) {
+                    var ld = entriesDicts[localIdx]
+                    ld["rank"] = localIdx + 1
+                    reply["localPlayer"] = ld
+                }
+                replyHandler(reply)
             }
 
         case "submitLapTimeToSupabase":
@@ -211,29 +211,28 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 replyHandler(["ok": true])
             }
 
-        case "syncAllTracks":
-            Task {
-                for track in TrackRegistry.allTracks {
-                    await SupabaseManager.shared.syncTrackFromGameCenter(trackId: track.id)
-                }
-                replyHandler(["ok": true])
-            }
-
         case "loadChampionshipDetail":
-            guard let playerId = message["playerId"] as? String else {
-                replyHandler(["error": "missing playerId"])
+            guard let playerName = message["playerName"] as? String else {
+                replyHandler(["error": "missing playerName"])
                 return
             }
             Task {
-                do {
-                    if let detail = try await SupabaseManager.shared.loadPlayerDetail(playerId: playerId) {
-                        replyHandler(["detail": detail.asDictionary])
-                    } else {
-                        replyHandler(["error": "player not found"])
-                    }
-                } catch {
-                    print("[WC-Phone] loadChampionshipDetail failed: \(error)")
-                    replyHandler(["error": error.localizedDescription])
+                let result = await GameCenterManager.shared.calculateChampionship()
+                if let standing = result.standings.first(where: { $0.playerName == playerName }) {
+                    let rank = (result.standings.firstIndex(where: { $0.playerName == playerName }) ?? 0) + 1
+                    let detail: [String: Any] = [
+                        "playerName": standing.playerName,
+                        "totalPoints": standing.totalPoints,
+                        "tracksEntered": standing.tracksEntered,
+                        "rank": rank,
+                        "trackResults": standing.trackResults.map { [
+                            "trackId": $0.trackId, "trackName": $0.trackName, "flag": $0.flag,
+                            "rank": $0.rank, "points": $0.points
+                        ] }
+                    ]
+                    replyHandler(["detail": detail])
+                } else {
+                    replyHandler(["error": "player not found"])
                 }
             }
 

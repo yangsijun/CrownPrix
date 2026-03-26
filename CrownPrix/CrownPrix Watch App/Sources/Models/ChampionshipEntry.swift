@@ -38,7 +38,6 @@ struct ChampionshipEntry: Identifiable {
 }
 
 struct ChampionshipDetail {
-    let playerId: String
     let playerName: String
     let totalPoints: Int
     let tracksEntered: Int
@@ -52,26 +51,10 @@ struct ChampionshipDetail {
         let flag: String
         let rank: Int
         let points: Int
-        let lapTimeMs: Int
-    }
-
-    var asDictionary: [String: Any] {
-        [
-            "playerId": playerId,
-            "playerName": playerName,
-            "totalPoints": totalPoints,
-            "tracksEntered": tracksEntered,
-            "rank": rank,
-            "trackResults": trackResults.map { [
-                "trackId": $0.trackId, "trackName": $0.trackName, "flag": $0.flag,
-                "rank": $0.rank, "points": $0.points, "lapTimeMs": $0.lapTimeMs
-            ] }
-        ]
     }
 
     static func from(_ dict: [String: Any]) -> ChampionshipDetail? {
-        guard let playerId = dict["playerId"] as? String,
-              let playerName = dict["playerName"] as? String,
+        guard let playerName = dict["playerName"] as? String,
               let totalPoints = dict["totalPoints"] as? Int,
               let tracksEntered = dict["tracksEntered"] as? Int,
               let rank = dict["rank"] as? Int,
@@ -81,10 +64,9 @@ struct ChampionshipDetail {
                   let tn = d["trackName"] as? String,
                   let f = d["flag"] as? String,
                   let r = d["rank"] as? Int,
-                  let p = d["points"] as? Int,
-                  let lt = d["lapTimeMs"] as? Int else { return nil }
-            return TrackResult(trackId: tid, trackName: tn, flag: f, rank: r, points: p, lapTimeMs: lt)
+                  let p = d["points"] as? Int else { return nil }
+            return TrackResult(trackId: tid, trackName: tn, flag: f, rank: r, points: p)
         }
-        return ChampionshipDetail(playerId: playerId, playerName: playerName, totalPoints: totalPoints, tracksEntered: tracksEntered, rank: rank, trackResults: trackResults)
+        return ChampionshipDetail(playerName: playerName, totalPoints: totalPoints, tracksEntered: tracksEntered, rank: rank, trackResults: trackResults)
     }
 }

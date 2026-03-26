@@ -84,7 +84,7 @@ struct ChampionshipView: View {
 
     private func entryRow(_ entry: ChampionshipEntry) -> some View {
         NavigationLink {
-            ChampionshipDetailView(playerId: entry.playerId, playerName: entry.playerName)
+            ChampionshipDetailView(playerName: entry.playerName)
         } label: {
             HStack {
                 Text("\(entry.rank)")

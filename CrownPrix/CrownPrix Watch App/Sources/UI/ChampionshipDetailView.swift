@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct ChampionshipDetailView: View {
-    let playerId: String
     let playerName: String
 
     @State private var detail: ChampionshipDetail?
@@ -74,7 +73,7 @@ struct ChampionshipDetailView: View {
 
     private func fetchDetail() async {
         do {
-            detail = try await GameCenterManager.shared.loadChampionshipDetail(playerId: playerId)
+            detail = try await GameCenterManager.shared.loadChampionshipDetail(playerName: playerName)
             if detail == nil { errorOccurred = true }
         } catch {
             errorOccurred = true
