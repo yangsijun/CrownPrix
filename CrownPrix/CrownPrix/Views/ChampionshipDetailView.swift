@@ -46,9 +46,7 @@ struct ChampionshipDetailView: View {
                 ForEach(detail.trackResults) { result in
                     HStack {
                         Text(result.flag)
-                        Text(result.trackName)
-                            .font(.body)
-                            .lineLimit(1)
+                        MarqueeText(text: result.trackName, font: .body, staticAlignment: .leading)
                         Spacer()
                         if result.rank > 0 {
                             Text("P\(result.rank)")

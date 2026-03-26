@@ -134,10 +134,8 @@ struct LeaderboardView: View {
                                         .foregroundStyle(Color(red: 0.7, green: 0.3, blue: 1.0))
                                     Text(formatSectorTime(record.time))
                                         .font(.system(.caption, design: .monospaced, weight: .semibold))
-                                    Text(record.playerName)
-                                        .font(.caption2)
+                                    MarqueeText(text: record.playerName, font: .caption2, staticAlignment: .center)
                                         .foregroundStyle(.secondary)
-                                        .lineLimit(1)
                                 }
                                 .frame(maxWidth: .infinity)
                             } else {
@@ -164,12 +162,10 @@ struct LeaderboardView: View {
             Text("\(entry.rank)")
                 .font(.system(.caption, design: .monospaced, weight: .bold))
                 .frame(width: 28, alignment: .leading)
-            Text(entry.playerName)
-                .font(.caption)
-                .lineLimit(1)
-            Spacer()
+            MarqueeText(text: entry.playerName, font: .caption, staticAlignment: .leading)
             Text(TimeFormatter.format(entry.lapTime))
                 .font(.system(.caption2, design: .monospaced))
+                .fixedSize()
         }
         .foregroundStyle(entry.isLocalPlayer ? .yellow : .primary)
     }

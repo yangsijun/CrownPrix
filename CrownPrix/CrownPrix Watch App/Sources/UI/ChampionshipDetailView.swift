@@ -45,9 +45,7 @@ struct ChampionshipDetailView: View {
             Section("Circuits") {
                 ForEach(detail.trackResults) { result in
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("\(result.flag) \(result.trackName)")
-                            .font(.caption2)
-                            .lineLimit(1)
+                        MarqueeText(text: "\(result.flag) \(result.trackName)", font: .caption2, staticAlignment: .leading)
                         HStack(spacing: 8) {
                             Spacer()
                             if result.rank > 0 {

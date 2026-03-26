@@ -14,8 +14,7 @@ struct TrackListView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
-                                Text(meta.displayName)
-                                    .font(.body)
+                                MarqueeText(text: meta.displayName, font: .body, staticAlignment: .leading)
                                 Spacer()
                             }
                             HStack {

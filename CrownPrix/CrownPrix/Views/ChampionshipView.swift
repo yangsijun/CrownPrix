@@ -60,8 +60,7 @@ struct ChampionshipView: View {
                     .font(.system(.body, design: .monospaced).bold())
                     .frame(width: 36, alignment: .leading)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.playerName)
-                        .lineLimit(1)
+                    MarqueeText(text: entry.playerName, font: .body, staticAlignment: .leading)
                     Text("\(entry.tracksEntered) track\(entry.tracksEntered == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
