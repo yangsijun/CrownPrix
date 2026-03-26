@@ -55,6 +55,16 @@ enum PersistenceManager {
         }
     }
 
+    static func clearAllRecords() {
+        for track in TrackRegistry.allTracks {
+            UserDefaults.standard.removeObject(forKey: "bestTime.\(track.id)")
+            for i in 0..<3 {
+                UserDefaults.standard.removeObject(forKey: "bestSector.\(track.id).\(i)")
+            }
+        }
+        print("[Persist] cleared all local records (account change)")
+    }
+
     static func cleanupInvalidSectorTimes() {
         let key = "didCleanupZeroSectors"
         guard !UserDefaults.standard.bool(forKey: key) else { return }

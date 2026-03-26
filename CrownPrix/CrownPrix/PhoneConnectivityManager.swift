@@ -10,9 +10,12 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         WCSession.default.activate()
     }
 
-    func sendAuthStatus(_ authenticated: Bool) {
+    func sendAuthStatus(_ authenticated: Bool, playerID: String = "") {
         guard WCSession.default.isPaired, WCSession.default.isWatchAppInstalled else { return }
-        try? WCSession.default.updateApplicationContext(["gcAuthenticated": authenticated])
+        try? WCSession.default.updateApplicationContext([
+            "gcAuthenticated": authenticated,
+            "gcPlayerID": playerID
+        ])
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: (any Error)?) {}

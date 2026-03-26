@@ -36,9 +36,10 @@ final class GameCenterManager: ObservableObject {
                     print("[GC] auth error: \(error.localizedDescription)")
                 }
                 let authed = GKLocalPlayer.local.isAuthenticated
-                print("[GC] authenticated: \(authed), player: \(GKLocalPlayer.local.displayName)")
+                let playerID = GKLocalPlayer.local.gamePlayerID
+                print("[GC] authenticated: \(authed), player: \(GKLocalPlayer.local.displayName), id: \(playerID)")
                 self?.isAuthenticated = authed
-                PhoneConnectivityManager.shared.sendAuthStatus(authed)
+                PhoneConnectivityManager.shared.sendAuthStatus(authed, playerID: playerID)
             }
         }
     }

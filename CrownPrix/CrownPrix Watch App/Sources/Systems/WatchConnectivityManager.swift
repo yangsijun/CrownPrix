@@ -38,8 +38,20 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         }
     }
 
+    private static let playerIDKey = "gc.currentPlayerID"
+
     private func syncAuthStatus(_ context: [String: Any]) {
         if let authed = context["gcAuthenticated"] as? Bool {
+            // Detect account change before setting isAuthenticated,
+            // so no sync can run with stale local data.
+            if authed, let newPlayerID = context["gcPlayerID"] as? String, !newPlayerID.isEmpty {
+                let previousPlayerID = UserDefaults.standard.string(forKey: Self.playerIDKey)
+                if let previous = previousPlayerID, previous != newPlayerID {
+                    print("[WC-Watch] GC account changed: \(previous) → \(newPlayerID), clearing local records")
+                    PersistenceManager.clearAllRecords()
+                }
+                UserDefaults.standard.set(newPlayerID, forKey: Self.playerIDKey)
+            }
             print("[WC-Watch] GC auth status from phone: \(authed)")
             GameCenterManager.shared.isAuthenticated = authed
         }
