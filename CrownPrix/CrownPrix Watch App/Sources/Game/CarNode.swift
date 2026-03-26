@@ -1,7 +1,7 @@
 import SpriteKit
 
 final class CarNode: SKShapeNode {
-    static func create() -> CarNode {
+    static func create(color: SKColor = CarColor.saved.skColor) -> CarNode {
         let body = CGMutablePath()
         body.move(to: CGPoint(x: 7, y: 0))
         body.addLine(to: CGPoint(x: 4.5, y: 1.0))
@@ -13,7 +13,7 @@ final class CarNode: SKShapeNode {
         body.closeSubpath()
 
         let node = CarNode(path: body)
-        node.fillColor = .red
+        node.fillColor = color
         node.strokeColor = .clear
         node.zPosition = 10
 
@@ -41,12 +41,12 @@ final class CarNode: SKShapeNode {
         node.addChild(cockpit)
 
         let fWing = SKShapeNode(rect: CGRect(x: 5.5, y: -3.0, width: 0.8, height: 6.0))
-        fWing.fillColor = .red
+        fWing.fillColor = color
         fWing.strokeColor = .clear
         node.addChild(fWing)
 
         let rWing = SKShapeNode(rect: CGRect(x: -7.0, y: -3.3, width: 0.8, height: 6.6))
-        rWing.fillColor = .red
+        rWing.fillColor = color
         rWing.strokeColor = .clear
         node.addChild(rWing)
 

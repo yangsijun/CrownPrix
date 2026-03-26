@@ -10,6 +10,7 @@ struct TrackSelectView: View {
     @State private var selectedTrackId: String?
     @State private var bestTimes: [String: TimeInterval] = [:]
     @State private var localRanks: [String: Int] = [:]
+    @State private var carColor = CarColor.saved
 
     var body: some View {
         TabView(selection: $selectedTrackId) {
@@ -139,10 +140,10 @@ struct TrackSelectView: View {
                     path.addLine(to: CGPoint(x: rightX, y: rightY))
                     path.closeSubpath()
                 }
-                .fill(Color.red)
+                .fill(carColor.swiftUIColor)
 
                 Circle()
-                    .fill(Color.red)
+                    .fill(carColor.swiftUIColor)
                     .frame(width: 4, height: 4)
                     .position(startPos)
             }

@@ -30,6 +30,7 @@ final class SupabaseManager: ObservableObject {
             supabaseURL: supabaseURL,
             supabaseKey: key,
             options: .init(
+                auth: .init(emitLocalSessionAsInitialSession: true),
                 global: .init(
                     headers: ["x-player-id": playerId]
                 )
@@ -48,6 +49,7 @@ final class SupabaseManager: ObservableObject {
             supabaseURL: supabaseURL,
             supabaseKey: key,
             options: .init(
+                auth: .init(emitLocalSessionAsInitialSession: true),
                 global: .init(
                     headers: ["x-player-id": playerId]
                 )

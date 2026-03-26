@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     var onStart: () -> Void
     @ObservedObject private var gameCenterManager = GameCenterManager.shared
+    @State private var selectedColor = CarColor.saved
 
     var body: some View {
         VStack(spacing: 12) {
@@ -13,13 +14,13 @@ struct HomeView: View {
                     .font(.system(.title, design: .rounded, weight: .bold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                
+
                 Text("The Tiniest Race on Your Wrist")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                
+
                 if !gameCenterManager.isAuthenticated {
                     Text("Sign in to Game Center on your iPhone")
                         .font(.system(size: 9))
@@ -40,6 +41,16 @@ struct HomeView: View {
             .buttonStyle(.borderedProminent)
             .tint(.red)
 
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CarColorPickerView(selectedColor: $selectedColor)
+                } label: {
+                    Image(systemName: "paintpalette")
+                        .foregroundStyle(selectedColor.swiftUIColor)
+                }
+            }
         }
     }
 }

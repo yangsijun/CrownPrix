@@ -9,7 +9,7 @@ final class MinimapView {
     private let minimapScale: CGFloat
     private let minimapOffset: CGPoint
 
-    init(trackData: TrackData) {
+    init(trackData: TrackData, carColor: SKColor = CarColor.saved.skColor) {
         trackPoints = trackData.points
         containerNode = SKNode()
         containerNode.zPosition = 100
@@ -60,7 +60,7 @@ final class MinimapView {
         let smy = (startPt.y - centerY) * minimapScale
 
         carDot = SKShapeNode(circleOfRadius: 4)
-        carDot.fillColor = .red
+        carDot.fillColor = carColor
         carDot.strokeColor = .clear
         carDot.zPosition = 1
         carDot.position = CGPoint(x: smx, y: smy)

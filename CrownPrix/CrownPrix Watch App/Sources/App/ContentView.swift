@@ -18,7 +18,9 @@ struct ContentView: View {
         switch screen {
         case .home:
             TabView {
-                HomeView(onStart: { screen = .trackSelect })
+                NavigationStack {
+                    HomeView(onStart: { screen = .trackSelect })
+                }
 
                 NavigationStack {
                     RankingsListView(onStartRace: { trackId in
