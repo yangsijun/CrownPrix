@@ -40,6 +40,10 @@ final class SectorDetector {
         let sector = sectorForSegment(currentSegmentIndex)
         guard sector != currentSector else { return }
 
+        // Only allow sequential progression (0→1, 1→2, 2→0)
+        let expectedNext = (currentSector + 1) % 3
+        guard sector == expectedNext else { return }
+
         let sectorTime = elapsedTime - sectorStartTime
         let completedSector = currentSector
 

@@ -80,7 +80,7 @@ final class GameScene: SKScene, ObservableObject {
 
         let currentTrackId = trackId ?? ""
 
-        let lap = LapDetector(trackData: trackData)
+        let lap = LapDetector(trackId: currentTrackId, trackData: trackData)
         lap.onLapComplete = { [weak self] in
             guard let self, let timer = self.timerHUD else { return }
             let lapTime = timer.currentTime
