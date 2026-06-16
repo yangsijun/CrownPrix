@@ -49,6 +49,11 @@ final class GameScene: SKScene, ObservableObject {
         renderer.curbNodes.forEach { addChild($0) }
         addChild(renderer.trackNode)
         addChild(renderer.startLineNode)
+        #if DEBUG
+        if let barrierNode = renderer.innerBarrierNode {
+            addChild(barrierNode)
+        }
+        #endif
         trackRenderer = renderer
 
         let car = CarNode.create()

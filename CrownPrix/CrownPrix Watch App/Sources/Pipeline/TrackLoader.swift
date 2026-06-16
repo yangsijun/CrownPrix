@@ -27,7 +27,8 @@ enum TrackLoader {
             roadHalfWidth: data.roadHalfWidth,
             totalLength: data.totalLength,
             startSegmentIndex: 0,
-            startHeading: heading
+            startHeading: heading,
+            innerBarriers: data.innerBarriers
         )
     }
 
@@ -50,7 +51,8 @@ enum TrackLoader {
             roadHalfWidth: data.roadHalfWidth,
             totalLength: data.totalLength,
             startSegmentIndex: 0,
-            startHeading: heading
+            startHeading: heading,
+            innerBarriers: data.innerBarriers
         )
     }
 }

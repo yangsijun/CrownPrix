@@ -173,6 +173,12 @@ final class TrackPipelineTests: XCTestCase {
         XCTAssertEqual(Set(ids).count, ids.count, "Duplicate leaderboard IDs found")
     }
 
+    // WARNING: This regenerates every preprocessed track JSON from SVG. It will
+    // OVERWRITE manually-authored fields such as `innerBarriers` (currently in
+    // monaco.json and gillesvilleneuve.json). If you run with GENERATE_TRACKS=1
+    // after a track SVG changes, you must re-add the authored innerBarriers
+    // (recompute via `scripts/validate_barrier.py --regen`, then confirm all
+    // tracks are clean with `scripts/find_shortcuts.py`).
     func testGeneratePreprocessedJSON() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["GENERATE_TRACKS"] == "1", "Set GENERATE_TRACKS=1 to run")
         let bundle = Bundle.main

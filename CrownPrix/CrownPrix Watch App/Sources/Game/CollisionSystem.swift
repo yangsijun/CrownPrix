@@ -4,6 +4,8 @@ import Foundation
 final class CollisionSystem {
     private(set) var currentSegmentIndex: Int
     private let trackData: TrackData
+    // nil on first frame — no trajectory to test yet
+    private var previousCarPosition: CGPoint?
     var onWallCollision: (() -> Void)?
 
     init(trackData: TrackData) {
@@ -90,6 +92,49 @@ final class CollisionSystem {
         } else if nearest.distance <= GameConfig.collisionHalfWidth * 0.9 {
             physics.isRecovering = false
         }
+
+        // Inner-barrier check: reject trajectories that cross an impassable chord
+        // inside a tight curve (e.g. hairpin shortcut). Runs independently of
+        // isRecovering — the barrier is additive and must fire regardless of
+        // centerline wall state.
+        if let prevPos = previousCarPosition, !trackData.innerBarriers.isEmpty {
+            for barrier in trackData.innerBarriers {
+                let b0 = CGPoint(x: barrier.start.x, y: barrier.start.y)
+                let b1 = CGPoint(x: barrier.end.x, y: barrier.end.y)
+                if Self.segmentsIntersect(prevPos, physics.carPosition, b0, b1) {
+                    let newSpeed = physics.currentSpeed * GameConfig.wallSlowdownFactor
+                    physics.applyWallHit(
+                        correctedPosition: prevPos,
+                        correctedHeading: physics.carHeading,
+                        correctedSpeed: newSpeed
+                    )
+                    onWallCollision?()
+                    break
+                }
+            }
+        }
+
+        previousCarPosition = physics.carPosition
+    }
+
+    /// Returns true iff segment p1→p2 crosses the strict interior of p3→p4.
+    /// Uses open intervals on u (the barrier parameter) so trajectories that
+    /// merely graze a barrier endpoint (e.g. apex vertex on centerline) do
+    /// not trigger. The car-trajectory parameter t uses an inclusive interval.
+    static func segmentsIntersect(
+        _ p1: CGPoint, _ p2: CGPoint,
+        _ p3: CGPoint, _ p4: CGPoint
+    ) -> Bool {
+        let d1x = p2.x - p1.x
+        let d1y = p2.y - p1.y
+        let d2x = p4.x - p3.x
+        let d2y = p4.y - p3.y
+        let cross = d1x * d2y - d1y * d2x
+        guard abs(cross) > 0.0001 else { return false }
+        let t = ((p3.x - p1.x) * d2y - (p3.y - p1.y) * d2x) / cross
+        let u = ((p3.x - p1.x) * d1y - (p3.y - p1.y) * d1x) / cross
+        let eps: CGFloat = 1e-6
+        return t >= 0 && t <= 1 && u > eps && u < 1 - eps
     }
 
     static func perpendicularDistance(point: CGPoint, segA: CGPoint, segB: CGPoint) -> (distance: CGFloat, closest: CGPoint) {

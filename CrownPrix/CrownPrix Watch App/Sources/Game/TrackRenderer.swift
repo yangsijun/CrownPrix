@@ -4,6 +4,9 @@ final class TrackRenderer {
     let trackNode: SKShapeNode
     let startLineNode: SKShapeNode
     let curbNodes: [SKShapeNode]
+    #if DEBUG
+    let innerBarrierNode: SKShapeNode?
+    #endif
 
     init(trackData: TrackData, trackId: String = "") {
         let pts = trackData.points
@@ -11,6 +14,9 @@ final class TrackRenderer {
             trackNode = SKShapeNode()
             startLineNode = SKShapeNode()
             curbNodes = []
+            #if DEBUG
+            innerBarrierNode = nil
+            #endif
             return
         }
 
@@ -85,6 +91,24 @@ final class TrackRenderer {
             cn.zPosition = 0.5
             return cn
         }
+
+        #if DEBUG
+        if trackData.innerBarriers.isEmpty {
+            innerBarrierNode = nil
+        } else {
+            let barrierPath = CGMutablePath()
+            for barrier in trackData.innerBarriers {
+                barrierPath.move(to: CGPoint(x: barrier.start.x, y: barrier.start.y))
+                barrierPath.addLine(to: CGPoint(x: barrier.end.x, y: barrier.end.y))
+            }
+            let bn = SKShapeNode(path: barrierPath)
+            bn.strokeColor = .magenta
+            bn.lineWidth = 2
+            bn.lineCap = .round
+            bn.zPosition = 2
+            innerBarrierNode = bn
+        }
+        #endif
     }
 
     // MARK: - Curb Geometry
