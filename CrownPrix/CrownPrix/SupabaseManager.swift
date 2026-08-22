@@ -136,7 +136,7 @@ final class SupabaseManager: ObservableObject {
         }
 
         // Backfill own personal bests from GC
-        let bestTimes = await GameCenterManager.shared.loadMyBestTimes()
+        let (bestTimes, _) = await GameCenterManager.shared.loadMyBestTimes()
         guard !bestTimes.isEmpty else {
             print("[Supabase] reconcile: no GC best times found")
             return

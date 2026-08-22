@@ -146,12 +146,14 @@ final class GameCenterManager: ObservableObject {
         return result
     }
 
+    /// Per-sector values: > 0 our record, 0 confirmed no entry (loaded OK),
+    /// -1 load failed. The watch needs the empty/failed distinction so a
+    /// server-side deletion can be told apart from a transient error.
     func loadMyBestSectorTimes() async -> [String: [Double]] {
         guard isAuthenticated else { return [:] }
         var result: [String: [Double]] = [:]
         for meta in TrackRegistry.allTracks {
             var sectors: [Double] = [-1, -1, -1]
-            var hasAny = false
             for i in 0..<3 {
                 let leaderboardId = LeaderboardIDs.sector(meta.id, i)
                 do {
@@ -160,23 +162,26 @@ final class GameCenterManager: ObservableObject {
                     let (localEntry, _, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
                     if let entry = localEntry, entry.score > 0 {
                         sectors[i] = Double(entry.score) / 1000.0
-                        hasAny = true
+                    } else {
+                        sectors[i] = 0
                     }
                 } catch {
                     print("[GC] loadMyBestSectorTimes FAILED \(leaderboardId): \(error)")
                     continue
                 }
             }
-            if hasAny {
-                result[meta.id] = sectors
-            }
+            result[meta.id] = sectors
         }
         return result
     }
 
-    func loadMyBestTimes() async -> [String: Double] {
-        guard isAuthenticated else { return [:] }
+    /// times: our real server records. noEntry: tracks confirmed to have no
+    /// entry for us (loaded OK). Tracks in neither failed to load — the watch
+    /// leaves those untouched.
+    func loadMyBestTimes() async -> (times: [String: Double], noEntry: [String]) {
+        guard isAuthenticated else { return ([:], []) }
         var result: [String: Double] = [:]
+        var noEntry: [String] = []
         for meta in TrackRegistry.allTracks {
             let leaderboardId = meta.leaderboardId
             do {
@@ -185,13 +190,15 @@ final class GameCenterManager: ObservableObject {
                 let (localEntry, _, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
                 if let entry = localEntry, entry.score > 0 {
                     result[meta.id] = Double(entry.score) / 1000.0
+                } else {
+                    noEntry.append(meta.id)
                 }
             } catch {
                 print("[GC] loadMyBestTimes FAILED \(leaderboardId): \(error)")
                 continue
             }
         }
-        return result
+        return (result, noEntry)
     }
 
     private static let f1Points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]

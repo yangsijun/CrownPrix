@@ -70,16 +70,12 @@ struct RankingsListView: View {
     private func syncLocalScores() {
         isSyncing = true
         Task {
-            let allBests = PersistenceManager.getAllBestTimes()
-            for (trackId, lapTime) in allBests {
-                try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime)
-                let sectorTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
-                if sectorTimes.contains(where: { $0 != nil }) {
-                    try? await GameCenterManager.shared.submitSectorTimes(trackId: trackId, times: sectorTimes)
-                }
-                // Also submit to Supabase via WC
-                try? await GameCenterManager.shared.submitLapTimeToSupabase(trackId: trackId, lapTime: lapTime)
-            }
+            // Server-authoritative sync: uploads only records that never reached
+            // GC and drops local copies of records deleted server-side. A blind
+            // re-submit here would resurrect deleted (cheat) records. Lap
+            // uploads also reach Supabase via the phone's submitScore handler.
+            await GameCenterManager.shared.syncBestTimes()
+            await GameCenterManager.shared.syncBestSectorTimes()
             await loadLocalEntries()
             isSyncing = false
         }

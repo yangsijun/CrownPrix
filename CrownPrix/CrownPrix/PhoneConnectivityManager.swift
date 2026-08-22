@@ -111,8 +111,8 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
 
         case "syncBestTimes":
             Task {
-                let bestTimes = await GameCenterManager.shared.loadMyBestTimes()
-                replyHandler(["bestTimes": bestTimes])
+                let (bestTimes, noEntry) = await GameCenterManager.shared.loadMyBestTimes()
+                replyHandler(["bestTimes": bestTimes, "noEntry": noEntry])
             }
 
         case "syncBestSectorTimes":
@@ -144,22 +144,29 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 return
             }
             Task {
+                // Values: > 0 our record, 0 confirmed no entry, -1 load failed.
                 var lapTime: Double = -1.0
                 if let meta = TrackRegistry.track(byId: trackId) {
                     if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: [meta.leaderboardId]),
                        let lb = lbs.first,
-                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
-                       let entry = local, entry.score > 0 {
-                        lapTime = Double(entry.score) / 1000.0
+                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)) {
+                        if let entry = local, entry.score > 0 {
+                            lapTime = Double(entry.score) / 1000.0
+                        } else {
+                            lapTime = 0
+                        }
                     }
                 }
                 var sectors: [Double] = [-1.0, -1.0, -1.0]
                 for i in 0..<3 {
                     if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: [LeaderboardIDs.sector(trackId, i)]),
                        let lb = lbs.first,
-                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
-                       let entry = local, entry.score > 0 {
-                        sectors[i] = Double(entry.score) / 1000.0
+                       let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)) {
+                        if let entry = local, entry.score > 0 {
+                            sectors[i] = Double(entry.score) / 1000.0
+                        } else {
+                            sectors[i] = 0
+                        }
                     }
                 }
                 replyHandler(["lapTime": lapTime, "sectorTimes": sectors])

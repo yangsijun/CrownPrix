@@ -52,7 +52,10 @@ final class GameCenterManager: ObservableObject {
             print("[GC] submitScore skipped — invalid lapTime \(lapTime) for \(trackId)")
             return
         }
-        try await WatchConnectivityManager.shared.transferScoreAsync(trackId: trackId, lapTime: lapTime)
+        let confirmed = try await WatchConnectivityManager.shared.transferScoreAsync(trackId: trackId, lapTime: lapTime)
+        if confirmed {
+            PersistenceManager.recordUploadedLap(trackId: trackId, ms: Self.submittedMs(lapTime))
+        }
     }
 
     func submitSectorTimes(trackId: String, times: [TimeInterval?]) async throws {
@@ -62,8 +65,19 @@ final class GameCenterManager: ObservableObject {
             return
         }
         #endif
-        try await WatchConnectivityManager.shared.transferSectorTimesAsync(trackId: trackId, times: times)
+        let confirmed = try await WatchConnectivityManager.shared.transferSectorTimesAsync(trackId: trackId, times: times)
+        if confirmed {
+            for (i, t) in times.enumerated() {
+                guard let t, t > 0 else { continue }
+                PersistenceManager.recordUploadedSector(trackId: trackId, sector: i, ms: Self.submittedMs(t))
+            }
+        }
     }
+
+    /// Milliseconds as a submission truncates them (Int(t * 1000)).
+    private static func submittedMs(_ t: TimeInterval) -> Int { Int(t * 1000) }
+    /// Milliseconds of a value read back from GC (already ms-precise).
+    private static func gcMs(_ t: TimeInterval) -> Int { Int((t * 1000).rounded()) }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async throws -> LeaderboardData {
         #if DEBUG
@@ -118,52 +132,93 @@ final class GameCenterManager: ObservableObject {
         do {
             let reply = try await sendMessageWithTimeout(["type": "syncTrackBests", "trackId": trackId])
             print("[GC] syncTrackBests reply for \(trackId): lapTime=\(reply["lapTime"] ?? "nil"), sectors=\(reply["sectorTimes"] ?? "nil")")
-            if let lapTime = reply["lapTime"] as? Double, lapTime > 0 {
-                let localBest = PersistenceManager.getBestTime(trackId: trackId)
-                if localBest == nil || lapTime < localBest! {
-                    PersistenceManager.forceSetBestTime(trackId: trackId, time: lapTime)
+            // Values: > 0 our server record, 0 confirmed no entry, < 0 load failed.
+            // The server is authoritative — see the merge rules in syncBestTimes.
+            if let lapTime = reply["lapTime"] as? Double {
+                if lapTime > 0 {
+                    let serverMs = Self.gcMs(lapTime)
+                    let localBest = PersistenceManager.getBestTime(trackId: trackId)
+                    let deletedServerSide = PersistenceManager.uploadedLapMs(trackId: trackId).map { serverMs > $0 } ?? false
+                    if deletedServerSide || localBest == nil || lapTime < localBest! {
+                        PersistenceManager.forceSetBestTime(trackId: trackId, time: lapTime)
+                    }
+                    PersistenceManager.setUploadedLapMs(trackId: trackId, ms: serverMs)
+                } else if lapTime == 0, PersistenceManager.uploadedLapMs(trackId: trackId) != nil {
+                    PersistenceManager.clearBestTime(trackId: trackId)
                 }
             }
             if let sectors = reply["sectorTimes"] as? [Double] {
-                let times: [TimeInterval?] = sectors.map { $0 <= 0 ? nil : $0 }
-                PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
+                for (i, raw) in sectors.prefix(3).enumerated() {
+                    if raw > 0 {
+                        let serverMs = Self.gcMs(raw)
+                        let local = PersistenceManager.getBestSectorTimes(trackId: trackId)[i]
+                        let deletedServerSide = PersistenceManager.uploadedSectorMs(trackId: trackId, sector: i).map { serverMs > $0 } ?? false
+                        if deletedServerSide || local == nil || raw < local! {
+                            PersistenceManager.forceSetBestSectorTime(trackId: trackId, sector: i, time: raw)
+                        }
+                        PersistenceManager.setUploadedSectorMs(trackId: trackId, sector: i, ms: serverMs)
+                    } else if raw == 0, PersistenceManager.uploadedSectorMs(trackId: trackId, sector: i) != nil {
+                        PersistenceManager.clearBestSectorTime(trackId: trackId, sector: i)
+                    }
+                }
             }
         } catch {
             print("[GC] syncTrackBests failed for \(trackId): \(error)")
         }
     }
 
+    /// Server-authoritative merge. "bestTimes" holds our real server records,
+    /// "noEntry" the tracks confirmed to have none; tracks in neither failed to
+    /// load and are left untouched (treating a failure as "missing" would
+    /// resurrect records deleted server-side).
     func syncBestTimes() async {
         guard isAuthenticated else { return }
 
         let gcTimes: [String: Double]
+        let noEntry: [String]
         do {
             let reply = try await sendMessageWithTimeout(["type": "syncBestTimes"])
             gcTimes = reply["bestTimes"] as? [String: Double] ?? [:]
+            noEntry = reply["noEntry"] as? [String] ?? []
         } catch {
             return
         }
 
-        guard !gcTimes.isEmpty else { return }
-
         // gcTime 0 is GameKit's phantom "no entry" localPlayerEntry — never persist it.
         for (trackId, gcTime) in gcTimes where gcTime > 0 {
+            let serverMs = Self.gcMs(gcTime)
             let localBest = PersistenceManager.getBestTime(trackId: trackId)
+
+            if let uploaded = PersistenceManager.uploadedLapMs(trackId: trackId), serverMs > uploaded {
+                // The server reports a slower time than we confirmed-uploaded:
+                // our faster record was deleted there (cheat cleanup). Server
+                // wins — adopt its time and never re-upload the local copy.
+                PersistenceManager.forceSetBestTime(trackId: trackId, time: gcTime)
+                PersistenceManager.setUploadedLapMs(trackId: trackId, ms: serverMs)
+                continue
+            }
+            PersistenceManager.setUploadedLapMs(trackId: trackId, ms: serverMs)
             if localBest == nil || gcTime < localBest! {
                 PersistenceManager.forceSetBestTime(trackId: trackId, time: gcTime)
+            } else if let local = localBest, Self.submittedMs(local) < serverMs {
+                // A local improvement that never reached the server.
+                try? await submitScore(trackId: trackId, lapTime: local)
             }
         }
 
-        let allLocal = PersistenceManager.getAllBestTimes()
-        for (trackId, localTime) in allLocal {
-            if let gcTime = gcTimes[trackId], localTime < gcTime {
-                try? await submitScore(trackId: trackId, lapTime: localTime)
-            } else if gcTimes[trackId] == nil {
-                try? await submitScore(trackId: trackId, lapTime: localTime)
+        for trackId in noEntry {
+            if PersistenceManager.uploadedLapMs(trackId: trackId) != nil {
+                // We confirmed a record on the server before and now it's gone —
+                // deleted server-side. Drop the local copy instead of re-uploading.
+                PersistenceManager.clearBestTime(trackId: trackId)
+            } else if let local = PersistenceManager.getBestTime(trackId: trackId) {
+                try? await submitScore(trackId: trackId, lapTime: local)
             }
         }
     }
 
+    /// Server-authoritative sector merge. Per-sector values from the phone:
+    /// > 0 our server record, 0 confirmed no entry, < 0 load failed (untouched).
     func syncBestSectorTimes() async {
         guard isAuthenticated else { return }
 
@@ -176,25 +231,35 @@ final class GameCenterManager: ObservableObject {
         }
 
         for (trackId, gcSectors) in gcData {
-            let times: [TimeInterval?] = gcSectors.map { $0 <= 0 ? nil : $0 }
-            PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
-        }
+            let localTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
+            var toUpload: [TimeInterval?] = [nil, nil, nil]
 
-        for meta in TrackRegistry.allTracks {
-            let localTimes = PersistenceManager.getBestSectorTimes(trackId: meta.id)
-            guard localTimes.contains(where: { $0 != nil }) else { continue }
+            for (i, raw) in gcSectors.prefix(3).enumerated() {
+                if raw > 0 {
+                    let serverMs = Self.gcMs(raw)
+                    if let uploaded = PersistenceManager.uploadedSectorMs(trackId: trackId, sector: i), serverMs > uploaded {
+                        // Our faster sector was deleted server-side — adopt the server's.
+                        PersistenceManager.forceSetBestSectorTime(trackId: trackId, sector: i, time: raw)
+                        PersistenceManager.setUploadedSectorMs(trackId: trackId, sector: i, ms: serverMs)
+                        continue
+                    }
+                    PersistenceManager.setUploadedSectorMs(trackId: trackId, sector: i, ms: serverMs)
+                    if localTimes[i] == nil || raw < localTimes[i]! {
+                        PersistenceManager.forceSetBestSectorTime(trackId: trackId, sector: i, time: raw)
+                    } else if let local = localTimes[i], Self.submittedMs(local) < serverMs {
+                        toUpload[i] = local
+                    }
+                } else if raw == 0 {
+                    if PersistenceManager.uploadedSectorMs(trackId: trackId, sector: i) != nil {
+                        PersistenceManager.clearBestSectorTime(trackId: trackId, sector: i)
+                    } else if let local = localTimes[i] {
+                        toUpload[i] = local
+                    }
+                }
+            }
 
-            if let gcSectors = gcData[meta.id] {
-                let gcTimes: [TimeInterval?] = gcSectors.map { $0 <= 0 ? nil : $0 }
-                let hasBetter = (0..<3).contains { i in
-                    guard let local = localTimes[i] else { return false }
-                    return gcTimes[i] == nil || local < gcTimes[i]!
-                }
-                if hasBetter {
-                    try? await submitSectorTimes(trackId: meta.id, times: localTimes)
-                }
-            } else {
-                try? await submitSectorTimes(trackId: meta.id, times: localTimes)
+            if toUpload.contains(where: { $0 != nil }) {
+                try? await submitSectorTimes(trackId: trackId, times: toUpload)
             }
         }
     }

@@ -101,12 +101,15 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         }
     }
 
-    func transferScoreAsync(trackId: String, lapTime: TimeInterval) async throws {
+    /// Returns true only when the phone confirmed the Game Center submission;
+    /// false means the score was queued via transferUserInfo (not confirmed).
+    @discardableResult
+    func transferScoreAsync(trackId: String, lapTime: TimeInterval) async throws -> Bool {
         let info: [String: Any] = ["type": "submitScore", "trackId": trackId, "lapTime": lapTime]
         guard WCSession.default.isReachable else {
             print("[WC-Watch] transferScoreAsync falling back to transferUserInfo (not reachable)")
             WCSession.default.transferUserInfo(info)
-            return
+            return false
         }
         do {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -126,16 +129,20 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         } catch {
             print("[WC-Watch] transferScoreAsync failed, falling back to transferUserInfo: \(error.localizedDescription)")
             WCSession.default.transferUserInfo(info)
+            return false
         }
+        return true
     }
 
-    func transferSectorTimesAsync(trackId: String, times: [TimeInterval?]) async throws {
+    /// Returns true only when the phone confirmed the Game Center submission.
+    @discardableResult
+    func transferSectorTimesAsync(trackId: String, times: [TimeInterval?]) async throws -> Bool {
         let rawTimes = times.map { $0 ?? -1.0 }
         let info: [String: Any] = ["type": "submitSectorTimes", "trackId": trackId, "times": rawTimes]
         guard WCSession.default.isReachable else {
             print("[WC-Watch] transferSectorTimesAsync falling back to transferUserInfo")
             WCSession.default.transferUserInfo(info)
-            return
+            return false
         }
         do {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
@@ -155,6 +162,8 @@ final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
         } catch {
             print("[WC-Watch] transferSectorTimesAsync failed, falling back to transferUserInfo: \(error.localizedDescription)")
             WCSession.default.transferUserInfo(info)
+            return false
         }
+        return true
     }
 }
