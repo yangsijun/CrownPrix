@@ -17,7 +17,7 @@ Track registry providing the canonical list of all racing circuits for the watch
 ### Working In This Directory
 - `TrackRegistry` is the watchOS-side equivalent of the iOS `Models/TrackRegistry`
 - Dev track (`"dev"`) included only in `#if DEBUG` builds for testing without Game Center
-- Leaderboard ID convention: `cp.laptime.{trackId}` — must match Game Center and iOS app
+- Leaderboard ID convention: `cp{gen}.laptime.{trackId}` built by `LeaderboardIDs` (generation 1 used the legacy `cp.` prefix) — must match Game Center and iOS app
 - Adding a new track requires: entry here, SVG in Resources, sector config in SectorConfig, leaderboard via scripts
 
 ### Testing Requirements

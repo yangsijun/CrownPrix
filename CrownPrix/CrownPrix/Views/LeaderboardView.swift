@@ -132,7 +132,7 @@ struct LeaderboardView: View {
 
 #Preview {
     NavigationStack {
-        LeaderboardView(leaderboardId: "cp.laptime.albertpark", trackName: "Albert Park", trackId: "albertpark")
+        LeaderboardView(leaderboardId: LeaderboardIDs.lapTime("albertpark"), trackName: "Albert Park", trackId: "albertpark")
     }
     .preferredColorScheme(.dark)
     .tint(.red)

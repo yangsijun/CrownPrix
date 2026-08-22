@@ -66,6 +66,18 @@ final class SupabaseRetryQueue {
         save([])
     }
 
+    /// One-time wipe when the leaderboard generation is bumped (anti-cheat reset).
+    /// Pending submissions recorded on an older generation may be tainted and
+    /// must not be replayed against the new generation's championship.
+    func migrateForLeaderboardGeneration() {
+        let key = "supabase.retryQueue.generation"
+        let stored = UserDefaults.standard.integer(forKey: key)
+        guard stored < LeaderboardIDs.generation else { return }
+        clearAll()
+        UserDefaults.standard.set(LeaderboardIDs.generation, forKey: key)
+        print("[Supabase] cleared retry queue for leaderboard generation \(LeaderboardIDs.generation)")
+    }
+
     private func load() -> [PendingSubmission] {
         guard let data = UserDefaults.standard.data(forKey: storageKey),
               let queue = try? JSONDecoder().decode([PendingSubmission].self, from: data) else {

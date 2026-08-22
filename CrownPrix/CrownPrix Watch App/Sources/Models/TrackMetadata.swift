@@ -7,5 +7,6 @@ struct TrackMetadata: Identifiable, Hashable {
     let flag: String
     let svgFilename: String
     let racingDirectionReversed: Bool
-    let leaderboardId: String
+
+    var leaderboardId: String { LeaderboardIDs.lapTime(id) }
 }

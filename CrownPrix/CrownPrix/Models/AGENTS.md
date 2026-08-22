@@ -19,7 +19,7 @@ Shared data types used by both the iOS and watchOS targets. Defines track identi
 ### Working In This Directory
 - These files have target membership in both iOS and watchOS — changes affect both apps
 - `TrackRegistry.allTracks` is the single source of truth for track enumeration
-- Leaderboard ID convention: `cp.laptime.{trackId}` — must match Game Center configuration
+- Leaderboard ID convention: `cp{gen}.laptime.{trackId}` built by `LeaderboardIDs` (generation 1 used the legacy `cp.` prefix) — must match Game Center configuration; bump `LeaderboardIDs.generation` for an anti-cheat reset
 - `TimeFormatter` avoids floating-point precision issues by converting to integer milliseconds first
 - The dev track (`"dev"`) is only included in `#if DEBUG` builds
 

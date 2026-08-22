@@ -13,6 +13,7 @@ struct CrownPrixApp: App {
                 .preferredColorScheme(.dark)
                 .tint(.red)
                 .onAppear {
+                    SupabaseRetryQueue.shared.migrateForLeaderboardGeneration()
                     PhoneConnectivityManager.shared.activate()
                     GameCenterManager.shared.authenticate()
                 }

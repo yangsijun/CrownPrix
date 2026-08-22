@@ -5,5 +5,6 @@ struct TrackMetadata: Identifiable, Hashable {
     let displayName: String
     let country: String
     let flag: String
-    let leaderboardId: String
+
+    var leaderboardId: String { LeaderboardIDs.lapTime(id) }
 }

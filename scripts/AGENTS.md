@@ -26,7 +26,8 @@ Python utilities for managing Game Center leaderboards via the App Store Connect
 - Always preview `set_score_range.py` output before applying (destructive operation)
 
 ### Common Patterns
-- Leaderboard naming: `cp.laptime.{trackId}` for lap times, `cp.sector.{trackId}.{0|1|2}` for sectors
+- Leaderboard naming: `cp{gen}.laptime.{trackId}` for lap times, `cp{gen}.sector.{trackId}.{0|1|2}` for sectors (generation 1 used the legacy `cp.` prefix; must match `LeaderboardIDs.generation` in the app)
+- `create_leaderboards.py --generation N` creates a new generation; `archive_leaderboards.py` retires an old one after the release replacing it is live
 - Default score range: 1–600000 centiseconds
 
 ## Dependencies

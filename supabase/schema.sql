@@ -197,9 +197,17 @@ CREATE OR REPLACE FUNCTION upsert_lap_time(
     p_player_id TEXT,
     p_player_name TEXT,
     p_track_id TEXT,
-    p_lap_time_ms INTEGER
+    p_lap_time_ms INTEGER,
+    p_client_generation INTEGER
 ) RETURNS VOID AS $$
 BEGIN
+    -- Reject app versions older than the current leaderboard generation
+    -- (anti-cheat reset; see LeaderboardIDs.generation in the app).
+    IF p_client_generation IS NULL OR p_client_generation < 2 THEN
+        RAISE EXCEPTION 'client generation % is no longer supported',
+            COALESCE(p_client_generation, 0);
+    END IF;
+
     INSERT INTO lap_times (player_id, player_name, track_id, lap_time_ms)
     VALUES (p_player_id, p_player_name, p_track_id, p_lap_time_ms)
     ON CONFLICT (player_id, track_id)

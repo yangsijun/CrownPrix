@@ -61,12 +61,15 @@ final class SupabaseManager: ObservableObject {
     /// Submit a lap time via the upsert_lap_time RPC function.
     /// The RPC function uses ON CONFLICT ... WHERE to only store improvements.
     /// updated_at is handled by DB DEFAULT now(), not client clock.
+    /// p_client_generation lets the server reject submissions from app versions
+    /// older than the current leaderboard generation (anti-cheat reset).
     func submitLapTime(playerId: String, playerName: String, trackId: String, lapTimeMs: Int) async throws {
         try await client.rpc("upsert_lap_time", params: [
             "p_player_id": AnyJSON(playerId),
             "p_player_name": AnyJSON(playerName),
             "p_track_id": AnyJSON(trackId),
-            "p_lap_time_ms": AnyJSON(lapTimeMs)
+            "p_lap_time_ms": AnyJSON(lapTimeMs),
+            "p_client_generation": AnyJSON(LeaderboardIDs.generation)
         ]).execute()
     }
 

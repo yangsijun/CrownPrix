@@ -13,9 +13,13 @@ Prerequisites:
 
 Usage:
   1. Copy .env.example to .env and fill in your values
-  2. python3 scripts/create_leaderboards.py
+  2. python3 scripts/create_leaderboards.py --generation 2
+
+The generation number must match LeaderboardIDs.generation in the app.
+Generation 1 uses the legacy "cp." prefix; generation N>1 uses "cp{N}.".
 """
 
+import argparse
 import json
 import os
 import sys
@@ -133,7 +137,7 @@ def create_leaderboard(headers, gc_detail_id, vendor_id, reference_name):
         "data": {
             "type": "gameCenterLeaderboards",
             "attributes": {
-                "defaultFormatter": "ELAPSED_TIME_CENTISECOND",
+                "defaultFormatter": "DECIMAL_POINT_3_PLACE",  # scores are ms: 83456 -> "83.456"
                 "referenceName": reference_name,
                 "vendorIdentifier": vendor_id,
                 "submissionType": "BEST_SCORE",
@@ -187,7 +191,20 @@ def add_localization(headers, leaderboard_api_id, locale, name):
         print(f"  ⚠️  Localization failed ({resp.status_code}): {name}")
 
 
+def vendor_prefix(generation):
+    return "cp" if generation == 1 else f"cp{generation}"
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Create CrownPrix Game Center leaderboards")
+    parser.add_argument(
+        "--generation", type=int, default=2,
+        help="Leaderboard generation (must match LeaderboardIDs.generation in the app). Default: 2",
+    )
+    args = parser.parse_args()
+    prefix = vendor_prefix(args.generation)
+    ref_suffix = "" if args.generation == 1 else f" (Gen {args.generation})"
+
     load_env()
 
     key_id = os.environ.get("ASC_KEY_ID")
@@ -230,8 +247,8 @@ def main():
     # Lap time leaderboards (24)
     print("=== Lap Time Leaderboards (24) ===\n")
     for track_id, track_name in TRACKS:
-        vendor_id = f"cp.laptime.{track_id}"
-        ref_name = f"Lap Time - {track_name}"
+        vendor_id = f"{prefix}.laptime.{track_id}"
+        ref_name = f"Lap Time - {track_name}{ref_suffix}"
         print(f"  Creating: {vendor_id}")
         lb_id = create_leaderboard(headers, gc_detail_id, vendor_id, ref_name)
         if lb_id:
@@ -247,8 +264,8 @@ def main():
     print("\n=== Sector Leaderboards (72) ===\n")
     for track_id, track_name in TRACKS:
         for sector in range(3):
-            vendor_id = f"cp.sector.{track_id}.{sector}"
-            ref_name = f"Sector {sector + 1} - {track_name}"
+            vendor_id = f"{prefix}.sector.{track_id}.{sector}"
+            ref_name = f"Sector {sector + 1} - {track_name}{ref_suffix}"
             display_name = f"{track_name} S{sector + 1}"
             print(f"  Creating: {vendor_id}")
             lb_id = create_leaderboard(headers, gc_detail_id, vendor_id, ref_name)
