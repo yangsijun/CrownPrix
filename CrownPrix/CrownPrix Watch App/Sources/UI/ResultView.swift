@@ -8,6 +8,7 @@ struct ResultView: View {
 
     @State private var savedRecord = false
     @State private var globalBestTime: TimeInterval?
+    @State private var isGlobalFastest = false
 
     private var previousBest: TimeInterval? { data.previousBestLapTime }
 
@@ -64,7 +65,11 @@ struct ResultView: View {
     @ViewBuilder
     private var titleSection: some View {
         let isPersonalBest = previousBest == nil || data.lapTime <= previousBest!
-        let isFastestLap = globalBestTime != nil && data.lapTime <= globalBestTime!
+        // Compare at millisecond precision: GC stores truncated ms, and the P1
+        // entry is often our own just-submitted score — full-precision compare
+        // would call this lap "slower" than itself by its sub-ms remainder.
+        let isFastestLap = isGlobalFastest
+            || globalBestTime.map { Int(data.lapTime * 1000) <= Int(($0 * 1000).rounded()) } ?? false
         
         Group {
             if isFastestLap {
@@ -89,7 +94,7 @@ struct ResultView: View {
                     Text("P1: \(TimeFormatter.format(globalBest))")
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                         .foregroundStyle(.secondary)
-                    let gap = data.lapTime - globalBest
+                    let gap = Double(Int(data.lapTime * 1000) - Int((globalBest * 1000).rounded())) / 1000.0
                     Text(String(format: "%+.3f", gap))
                         .font(.system(size: 10, weight: .medium, design: .monospaced))
                         .foregroundStyle(gap < 0 ? .green : .red)
@@ -141,17 +146,25 @@ struct ResultView: View {
     }
 
     private func loadGlobalBest() async {
-        #if DEBUG
-        let canLoad = GameCenterManager.shared.isAuthenticated || data.trackId == "dev"
-        #else
-        let canLoad = GameCenterManager.shared.isAuthenticated
-        #endif
-        guard canLoad, let track = TrackRegistry.track(byId: data.trackId) else { return }
-        let entries = try? await GameCenterManager.shared.loadTopScores(
-            leaderboardId: track.leaderboardId, count: 1
-        )
-        if let first = entries?.first {
-            globalBestTime = first.lapTime
+        guard let track = TrackRegistry.track(byId: data.trackId) else { return }
+        // No local isAuthenticated gate: the watch's auth flag can lag the
+        // phone's, and the phone already reports failures via WCError.loadFailed.
+        // Our own submission races this read (both start when the result screen
+        // appears), and reading a board GC hasn't settled yet can fail — retry
+        // briefly instead of giving up on the first miss.
+        for attempt in 0..<4 {
+            if attempt > 0 { try? await Task.sleep(for: .seconds(1.5)) }
+            guard let lb = try? await GameCenterManager.shared.loadLeaderboard(
+                leaderboardId: track.leaderboardId, topCount: 1
+            ) else { continue }
+            if let first = lb.topEntries.first {
+                globalBestTime = first.lapTime
+                if first.isLocalPlayer { isGlobalFastest = true }
+            } else {
+                // Board is genuinely empty — nobody is faster than this lap.
+                isGlobalFastest = true
+            }
+            return
         }
     }
 }

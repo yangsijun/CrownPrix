@@ -6,8 +6,9 @@ struct CrownPrix_Watch_AppApp: App {
         WindowGroup {
             ContentView()
                 .onAppear {
+                    PersistenceManager.migrateForLeaderboardGeneration()
+                    PersistenceManager.cleanupInvalidRecords()
                     WatchConnectivityManager.shared.activate()
-                    PersistenceManager.cleanupInvalidSectorTimes()
                 }
         }
     }

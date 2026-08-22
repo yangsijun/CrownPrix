@@ -5,6 +5,7 @@ enum WCError: Error {
     case phoneNotReachable
     case submissionFailed
     case timeout
+    case loadFailed
 }
 
 final class WatchConnectivityManager: NSObject, ObservableObject, WCSessionDelegate {

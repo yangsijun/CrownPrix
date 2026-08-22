@@ -65,11 +65,29 @@ enum PersistenceManager {
         print("[Persist] cleared all local records (account change)")
     }
 
-    static func cleanupInvalidSectorTimes() {
-        let key = "didCleanupZeroSectors"
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
+    /// One-time wipe when the leaderboard generation is bumped (anti-cheat reset).
+    /// Records set on older app versions may be tainted (shortcuts, reverse
+    /// driving) and must never be uploaded to the new generation's boards.
+    static func migrateForLeaderboardGeneration() {
+        let key = "leaderboardGeneration"
+        let stored = UserDefaults.standard.integer(forKey: key)
+        guard stored < LeaderboardIDs.generation else { return }
+        clearAllRecords()
+        UserDefaults.standard.set(LeaderboardIDs.generation, forKey: key)
+        print("[Persist] wiped local records for leaderboard generation \(LeaderboardIDs.generation)")
+    }
 
+    /// GameKit can report a phantom localPlayerEntry with score 0 on boards the
+    /// player has never submitted to; syncs used to write that 0 into local
+    /// storage, where it blocked real records. Runs every launch — cheap, and a
+    /// phantom can reappear at any time.
+    static func cleanupInvalidRecords() {
         for track in TrackRegistry.allTracks {
+            let lapKey = "bestTime.\(track.id)"
+            if let time = UserDefaults.standard.object(forKey: lapKey) as? TimeInterval, time <= 0 {
+                UserDefaults.standard.removeObject(forKey: lapKey)
+                print("[Persist] removed invalid 0 lap time for \(track.id)")
+            }
             for i in 0..<3 {
                 let sectorKey = "bestSector.\(track.id).\(i)"
                 if let time = UserDefaults.standard.object(forKey: sectorKey) as? TimeInterval, time <= 0 {
@@ -77,6 +95,5 @@ enum PersistenceManager {
                 }
             }
         }
-        UserDefaults.standard.set(true, forKey: key)
     }
 }

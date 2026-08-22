@@ -46,6 +46,12 @@ final class GameCenterManager: ObservableObject {
             return
         }
         #endif
+        // GC boards enforce scoreRangeStart 15000ms; a 0 here means a phantom
+        // GameKit entry leaked into local storage — never upload it.
+        guard lapTime >= 15 else {
+            print("[GC] submitScore skipped — invalid lapTime \(lapTime) for \(trackId)")
+            return
+        }
         try await WatchConnectivityManager.shared.transferScoreAsync(trackId: trackId, lapTime: lapTime)
     }
 
@@ -66,6 +72,9 @@ final class GameCenterManager: ObservableObject {
         }
         #endif
         let reply = try await sendMessageWithTimeout(["type": "loadLeaderboard", "leaderboardId": leaderboardId, "topCount": topCount])
+        // The phone marks failures explicitly so an empty entry list means a
+        // genuinely empty board, not a failed load.
+        if reply["error"] as? Bool == true { throw WCError.loadFailed }
         let entries = (reply["entries"] as? [[String: Any]] ?? []).compactMap { LeaderboardEntry.from($0) }
         var local: LeaderboardEntry?
         if let localDict = reply["localPlayer"] as? [String: Any] {
@@ -88,7 +97,11 @@ final class GameCenterManager: ObservableObject {
         #endif
         do {
             let reply = try await sendMessageWithTimeout(["type": "loadBestSectorTimes", "trackId": trackId])
-            return (reply["times"] as? [Double] ?? [-1, -1, -1]).map { $0 < 0 ? nil : $0 as TimeInterval? }
+            return (reply["times"] as? [Double] ?? [-1, -1, -1]).map { raw -> TimeInterval? in
+                if raw < 0 { return nil }        // load failed — global best unknown
+                if raw == 0 { return .infinity } // board confirmed empty — any time is the global fastest
+                return raw
+            }
         } catch {
             return [nil, nil, nil]
         }
@@ -112,7 +125,7 @@ final class GameCenterManager: ObservableObject {
                 }
             }
             if let sectors = reply["sectorTimes"] as? [Double] {
-                let times: [TimeInterval?] = sectors.map { $0 < 0 ? nil : $0 }
+                let times: [TimeInterval?] = sectors.map { $0 <= 0 ? nil : $0 }
                 PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
             }
         } catch {
@@ -133,7 +146,8 @@ final class GameCenterManager: ObservableObject {
 
         guard !gcTimes.isEmpty else { return }
 
-        for (trackId, gcTime) in gcTimes {
+        // gcTime 0 is GameKit's phantom "no entry" localPlayerEntry — never persist it.
+        for (trackId, gcTime) in gcTimes where gcTime > 0 {
             let localBest = PersistenceManager.getBestTime(trackId: trackId)
             if localBest == nil || gcTime < localBest! {
                 PersistenceManager.forceSetBestTime(trackId: trackId, time: gcTime)
@@ -162,7 +176,7 @@ final class GameCenterManager: ObservableObject {
         }
 
         for (trackId, gcSectors) in gcData {
-            let times: [TimeInterval?] = gcSectors.map { $0 < 0 ? nil : $0 }
+            let times: [TimeInterval?] = gcSectors.map { $0 <= 0 ? nil : $0 }
             PersistenceManager.saveBestSectorTimes(trackId: trackId, times: times)
         }
 
@@ -171,7 +185,7 @@ final class GameCenterManager: ObservableObject {
             guard localTimes.contains(where: { $0 != nil }) else { continue }
 
             if let gcSectors = gcData[meta.id] {
-                let gcTimes: [TimeInterval?] = gcSectors.map { $0 < 0 ? nil : $0 }
+                let gcTimes: [TimeInterval?] = gcSectors.map { $0 <= 0 ? nil : $0 }
                 let hasBetter = (0..<3).contains { i in
                     guard let local = localTimes[i] else { return false }
                     return gcTimes[i] == nil || local < gcTimes[i]!
@@ -263,7 +277,7 @@ final class GameCenterManager: ObservableObject {
     // MARK: - Dev Track Mock
 
     private static let devTrackId = "dev"
-    private static let devLeaderboardId = "cp.laptime.dev"
+    private static let devLeaderboardId = LeaderboardIDs.lapTime("dev")
 
     static func isDevTrack(_ trackId: String) -> Bool {
         trackId == devTrackId

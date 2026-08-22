@@ -149,16 +149,16 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                     if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: [meta.leaderboardId]),
                        let lb = lbs.first,
                        let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
-                       let entry = local {
+                       let entry = local, entry.score > 0 {
                         lapTime = Double(entry.score) / 1000.0
                     }
                 }
                 var sectors: [Double] = [-1.0, -1.0, -1.0]
                 for i in 0..<3 {
-                    if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: ["cp.sector.\(trackId).\(i)"]),
+                    if let lbs = try? await GKLeaderboard.loadLeaderboards(IDs: [LeaderboardIDs.sector(trackId, i)]),
                        let lb = lbs.first,
                        let (local, _, _) = try? await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1)),
-                       let entry = local {
+                       let entry = local, entry.score > 0 {
                         sectors[i] = Double(entry.score) / 1000.0
                     }
                 }

@@ -53,6 +53,12 @@ final class GameCenterManager: ObservableObject {
             print("[GC] submitScore skipped — unknown trackId: \(trackId)")
             throw GCError.unknownTrack
         }
+        // Boards enforce scoreRangeStart 15000ms; a 0 here is a phantom GameKit
+        // "no entry" score that leaked through a sync — never submit it.
+        guard lapTime >= 15 else {
+            print("[GC] submitScore skipped — invalid lapTime \(lapTime) for \(trackId)")
+            return
+        }
         let score = Int(lapTime * 1000)
         print("[GC] submitting score \(score) to \(leaderboardId)")
         try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
@@ -65,8 +71,8 @@ final class GameCenterManager: ObservableObject {
             throw GCError.notAuthenticated
         }
         for (i, time) in times.enumerated() {
-            guard let t = time else { continue }
-            let leaderboardId = "cp.sector.\(trackId).\(i)"
+            guard let t = time, t > 0 else { continue }
+            let leaderboardId = LeaderboardIDs.sector(trackId, i)
             let score = Int(t * 1000)
             try await GKLeaderboard.submitScore(score, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [leaderboardId])
             print("[GC] sector submitted OK: \(score) -> \(leaderboardId)")
@@ -74,15 +80,17 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async -> [String: Any] {
+        // "error": true distinguishes "couldn't load" from a genuinely empty board —
+        // the watch needs that to decide whether a first-ever record is the fastest.
         guard isAuthenticated else {
             print("[GC] loadLeaderboard skipped — not authenticated")
-            return ["entries": [], "localPlayer": NSNull()]
+            return ["entries": [], "localPlayer": NSNull(), "error": true]
         }
         do {
             let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
             guard let lb = leaderboards.first else {
                 print("[GC] loadLeaderboard — no leaderboard found for \(leaderboardId)")
-                return ["entries": [], "localPlayer": NSNull()]
+                return ["entries": [], "localPlayer": NSNull(), "error": true]
             }
             let (localEntry, entries, totalCount) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...topCount))
             print("[GC] loaded \(leaderboardId): \(entries.count) entries, total=\(totalCount), local=\(localEntry != nil)")
@@ -94,8 +102,10 @@ final class GameCenterManager: ObservableObject {
                     isLocalPlayer: entry.player == GKLocalPlayer.local
                 ).asDictionary
             }
-            let local: [String: Any]? = localEntry.map {
-                LeaderboardEntry(
+            // score 0 is GameKit's phantom localPlayerEntry for "no submission yet".
+            let local: [String: Any]? = localEntry.flatMap {
+                guard $0.score > 0 else { return nil }
+                return LeaderboardEntry(
                     rank: $0.rank,
                     playerName: $0.player.displayName,
                     lapTime: TimeInterval($0.score) / 1000.0,
@@ -105,7 +115,7 @@ final class GameCenterManager: ObservableObject {
             return ["entries": topEntries, "localPlayer": local as Any, "totalCount": totalCount]
         } catch {
             print("[GC] loadLeaderboard FAILED \(leaderboardId): \(error)")
-            return ["entries": [], "localPlayer": NSNull()]
+            return ["entries": [], "localPlayer": NSNull(), "error": true]
         }
     }
 
@@ -113,7 +123,7 @@ final class GameCenterManager: ObservableObject {
         guard isAuthenticated else { return [-1, -1, -1] }
         var result: [Double] = [-1, -1, -1]
         for i in 0..<3 {
-            let leaderboardId = "cp.sector.\(trackId).\(i)"
+            let leaderboardId = LeaderboardIDs.sector(trackId, i)
             do {
                 let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
                 guard let lb = leaderboards.first else {
@@ -123,6 +133,10 @@ final class GameCenterManager: ObservableObject {
                 let (_, entries, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
                 if let top = entries.first {
                     result[i] = Double(top.score) / 1000.0
+                } else {
+                    // 0 = board confirmed empty (loaded OK, no entries); -1 = load failed.
+                    // The watch turns 0 into "any time is the global fastest" (purple).
+                    result[i] = 0
                 }
             } catch {
                 print("[GC] sector load FAILED \(leaderboardId): \(error)")
@@ -139,12 +153,12 @@ final class GameCenterManager: ObservableObject {
             var sectors: [Double] = [-1, -1, -1]
             var hasAny = false
             for i in 0..<3 {
-                let leaderboardId = "cp.sector.\(meta.id).\(i)"
+                let leaderboardId = LeaderboardIDs.sector(meta.id, i)
                 do {
                     let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
                     guard let lb = leaderboards.first else { continue }
                     let (localEntry, _, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
-                    if let entry = localEntry {
+                    if let entry = localEntry, entry.score > 0 {
                         sectors[i] = Double(entry.score) / 1000.0
                         hasAny = true
                     }
@@ -169,7 +183,7 @@ final class GameCenterManager: ObservableObject {
                 let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
                 guard let lb = leaderboards.first else { continue }
                 let (localEntry, _, _) = try await lb.loadEntries(for: .global, timeScope: .allTime, range: NSRange(1...1))
-                if let entry = localEntry {
+                if let entry = localEntry, entry.score > 0 {
                     result[meta.id] = Double(entry.score) / 1000.0
                 }
             } catch {
@@ -265,7 +279,7 @@ final class GameCenterManager: ObservableObject {
         guard isAuthenticated else { return [nil, nil, nil] }
         var result: [SectorRecord?] = [nil, nil, nil]
         for i in 0..<3 {
-            let leaderboardId = "cp.sector.\(trackId).\(i)"
+            let leaderboardId = LeaderboardIDs.sector(trackId, i)
             do {
                 let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
                 guard let lb = leaderboards.first else { continue }
