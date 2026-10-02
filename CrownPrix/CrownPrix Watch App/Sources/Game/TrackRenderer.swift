@@ -216,6 +216,7 @@ final class TrackRenderer {
 
     private static let green = SKColor(red: 0.0, green: 0.6, blue: 0.2, alpha: 1)
     private static let maroon = SKColor(red: 0.5, green: 0.0, blue: 0.15, alpha: 1)
+    private static let teal = SKColor(red: 0.0, green: 0.65, blue: 0.6, alpha: 1)
 
     private static func curbPattern(for trackId: String) -> [SKColor] {
         switch trackId {
@@ -233,6 +234,8 @@ final class TrackRenderer {
             return [green, .white]
         case "losail":
             return [.white, maroon]
+        case "sepang":
+            return [teal, .white]
         default:
             return [.red, .white]
         }

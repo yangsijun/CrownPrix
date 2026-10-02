@@ -53,6 +53,14 @@ enum TrackRegistry {
                           svgFilename: "RaceCircuitAbuDhabi", racingDirectionReversed: false),
         ]
         #if DEBUG
+        tracks.append(contentsOf: [
+            TrackMetadata(id: "sepang", displayName: "Sepang International Circuit", country: "Malaysia", flag: "🇲🇾",
+                          svgFilename: "RaceCircuitSepang", racingDirectionReversed: false),
+            TrackMetadata(id: "imola", displayName: "Autodromo Enzo e Dino Ferrari", country: "Italy", flag: "🇮🇹",
+                          svgFilename: "RaceCircuitImola", racingDirectionReversed: false),
+            TrackMetadata(id: "portimao", displayName: "Algarve International Circuit", country: "Portugal", flag: "🇵🇹",
+                          svgFilename: "RaceCircuitPortimao", racingDirectionReversed: false),
+        ])
         tracks.insert(TrackMetadata(
             id: "dev",
             displayName: "Dev Circuit",
@@ -64,6 +72,24 @@ enum TrackRegistry {
         #endif
         return tracks
     }()
+
+    // Keep these IDs isolated even when a Release phone receives a Debug watch message.
+    private static let developmentTrackIDs: Set<String> = ["dev", "sepang", "imola", "portimao"]
+
+    static func isDevelopmentTrack(_ id: String) -> Bool {
+        developmentTrackIDs.contains(id)
+    }
+
+    static func isDevelopmentLeaderboard(_ leaderboardId: String) -> Bool {
+        developmentTrackIDs.contains { id in
+            leaderboardId == LeaderboardIDs.lapTime(id)
+                || (0..<3).contains { leaderboardId == LeaderboardIDs.sector(id, $0) }
+        }
+    }
+
+    static var competitiveTracks: [TrackMetadata] {
+        allTracks.filter { !isDevelopmentTrack($0.id) }
+    }
 
     static func track(byId id: String) -> TrackMetadata? {
         allTracks.first { $0.id == id }

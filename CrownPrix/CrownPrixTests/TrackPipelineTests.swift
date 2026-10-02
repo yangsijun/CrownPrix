@@ -154,14 +154,69 @@ final class TrackPipelineTests: XCTestCase {
         }
     }
 
-    func testTrackRegistryHas24Entries() {
+    func testTrackRegistryVisibilityByBuildConfiguration() {
+        let developmentIds = ["dev", "sepang", "imola", "portimao"]
         #if DEBUG
-        // +1 for dev-only circuit
-        XCTAssertEqual(TrackRegistry.allTracks.count, 25)
+        XCTAssertEqual(TrackRegistry.allTracks.count, 28)
+        for id in developmentIds {
+            XCTAssertNotNil(TrackRegistry.track(byId: id))
+        }
         #else
         XCTAssertEqual(TrackRegistry.allTracks.count, 24)
+        for id in developmentIds {
+            XCTAssertNil(TrackRegistry.track(byId: id))
+        }
         #endif
+        XCTAssertEqual(TrackRegistry.competitiveTracks.count, 24)
+        for id in developmentIds {
+            XCTAssertTrue(TrackRegistry.isDevelopmentTrack(id))
+            XCTAssertTrue(TrackRegistry.isDevelopmentLeaderboard(LeaderboardIDs.lapTime(id)))
+            for sector in 0..<3 {
+                XCTAssertTrue(TrackRegistry.isDevelopmentLeaderboard(LeaderboardIDs.sector(id, sector)))
+            }
+            XCTAssertFalse(TrackRegistry.competitiveTracks.contains { $0.id == id })
+        }
+        XCTAssertFalse(TrackRegistry.isDevelopmentTrack("monza"))
+        XCTAssertFalse(TrackRegistry.isDevelopmentLeaderboard(LeaderboardIDs.lapTime("monza")))
     }
+
+    #if DEBUG
+    func testDevelopmentCircuitsUseOfflineGameCenterMocks() async throws {
+        let manager = GameCenterManager()
+        XCTAssertFalse(manager.isAuthenticated)
+        for id in ["sepang", "imola", "portimao"] {
+            try await manager.submitScore(trackId: id, lapTime: 90)
+            try await manager.submitSectorTimes(trackId: id, times: [30, 30, 30])
+            try await manager.submitLapTimeToSupabase(trackId: id, lapTime: 90)
+            let leaderboard = try await manager.loadLeaderboard(leaderboardId: LeaderboardIDs.lapTime(id), topCount: 10)
+            XCTAssertFalse(leaderboard.topEntries.isEmpty)
+            XCTAssertNotNil(leaderboard.localPlayer)
+            let sectors = await manager.loadGlobalBestSectorTimes(trackId: id)
+            XCTAssertEqual(sectors.count, 3)
+            XCTAssertTrue(sectors.allSatisfy { ($0 ?? 0) > 0 })
+        }
+    }
+
+    func testDevelopmentCircuitBundlesMatchSourceAndLoadRaceLayout() throws {
+        for id in ["sepang", "imola", "portimao"] {
+            let metadata = try XCTUnwrap(TrackRegistry.track(byId: id))
+            let svgURL = try XCTUnwrap(BundleHelper.svgURL(name: metadata.svgFilename))
+            let source = try String(contentsOf: svgURL, encoding: .utf8)
+            let generated = try TrackPreprocessor.preprocessTrack(svgContent: source, metadata: metadata)
+            let jsonURL = try XCTUnwrap(BundleHelper.trackDataURL(trackId: id))
+            let bundled = try JSONDecoder().decode(TrackData.self, from: Data(contentsOf: jsonURL))
+            XCTAssertEqual(bundled.points, generated.points, "\(id): stale generated JSON")
+            let loaded = try TrackLoader.loadTrackData(trackId: id)
+            let offset = Int(Double(GameConfig.trackPointCount) * SectorConfig.layout(for: id).startOffset)
+            XCTAssertEqual(loaded.points.first, bundled.points[offset])
+            XCTAssertEqual(loaded.points.count, 800)
+            let sectors = SectorConfig.boundaries(for: id, segmentCount: loaded.points.count)
+            XCTAssertGreaterThan(sectors[0], 0)
+            XCTAssertLessThan(sectors[0], sectors[1])
+            XCTAssertLessThan(sectors[1], loaded.points.count)
+        }
+    }
+    #endif
 
     func testAllTrackIdsUnique() {
         let ids = TrackRegistry.allTracks.map(\.id)
@@ -203,7 +258,7 @@ final class TrackPipelineTests: XCTestCase {
             writtenCount += 1
         }
         #if DEBUG
-        XCTAssertEqual(writtenCount, 25)
+        XCTAssertEqual(writtenCount, 28)
         #else
         XCTAssertEqual(writtenCount, 24)
         #endif

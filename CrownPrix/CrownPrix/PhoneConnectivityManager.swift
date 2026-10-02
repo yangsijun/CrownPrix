@@ -53,9 +53,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
                 // 2. Submit own lap time to Supabase (fire-and-forget)
                 let player = GKLocalPlayer.local
                 guard player.isAuthenticated else { return }
-                #if DEBUG
-                guard trackId != "dev" else { return }
-                #endif
+                guard !TrackRegistry.isDevelopmentTrack(trackId) else { return }
                 let lapTimeMs = Int(lapTime * 1000)
                 do {
                     try await SupabaseManager.shared.submitLapTime(
@@ -139,7 +137,8 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             }
 
         case "syncTrackBests":
-            guard let trackId = message["trackId"] as? String else {
+            guard let trackId = message["trackId"] as? String,
+                  !TrackRegistry.isDevelopmentTrack(trackId) else {
                 replyHandler(["lapTime": -1.0, "sectorTimes": [-1.0, -1.0, -1.0]])
                 return
             }
@@ -199,6 +198,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
 
         case "submitLapTimeToSupabase":
             guard let trackId = message["trackId"] as? String,
+                  !TrackRegistry.isDevelopmentTrack(trackId),
                   let lapTimeMs = message["lapTimeMs"] as? Int else {
                 replyHandler(["ok": false])
                 return
@@ -261,9 +261,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject, WCSessionDeleg
             Task { try? await GameCenterManager.shared.submitScore(trackId: trackId, lapTime: lapTime) }
 
             // Submit own lap time to Supabase (fire-and-forget)
-            #if DEBUG
-            guard trackId != "dev" else { break }
-            #endif
+            guard !TrackRegistry.isDevelopmentTrack(trackId) else { break }
             let player = GKLocalPlayer.local
             if player.isAuthenticated {
                 let lapTimeMs = Int(lapTime * 1000)

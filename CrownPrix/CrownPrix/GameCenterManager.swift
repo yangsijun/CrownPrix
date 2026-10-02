@@ -45,6 +45,7 @@ final class GameCenterManager: ObservableObject {
     }
 
     func submitScore(trackId: String, lapTime: TimeInterval) async throws {
+        guard !TrackRegistry.isDevelopmentTrack(trackId) else { return }
         guard isAuthenticated else {
             print("[GC] submitScore skipped — not authenticated")
             throw GCError.notAuthenticated
@@ -66,6 +67,7 @@ final class GameCenterManager: ObservableObject {
     }
 
     func submitSectorTimes(trackId: String, times: [TimeInterval?]) async throws {
+        guard !TrackRegistry.isDevelopmentTrack(trackId) else { return }
         guard isAuthenticated else {
             print("[GC] submitSectorTimes skipped — not authenticated")
             throw GCError.notAuthenticated
@@ -80,6 +82,9 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadLeaderboard(leaderboardId: String, topCount: Int) async -> [String: Any] {
+        guard !TrackRegistry.isDevelopmentLeaderboard(leaderboardId) else {
+            return ["entries": [], "localPlayer": NSNull(), "error": true]
+        }
         // "error": true distinguishes "couldn't load" from a genuinely empty board —
         // the watch needs that to decide whether a first-ever record is the fastest.
         guard isAuthenticated else {
@@ -120,6 +125,7 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadGlobalBestSectorTimes(trackId: String) async -> [Double] {
+        guard !TrackRegistry.isDevelopmentTrack(trackId) else { return [-1, -1, -1] }
         guard isAuthenticated else { return [-1, -1, -1] }
         var result: [Double] = [-1, -1, -1]
         for i in 0..<3 {
@@ -152,7 +158,7 @@ final class GameCenterManager: ObservableObject {
     func loadMyBestSectorTimes() async -> [String: [Double]] {
         guard isAuthenticated else { return [:] }
         var result: [String: [Double]] = [:]
-        for meta in TrackRegistry.allTracks {
+        for meta in TrackRegistry.competitiveTracks {
             var sectors: [Double] = [-1, -1, -1]
             for i in 0..<3 {
                 let leaderboardId = LeaderboardIDs.sector(meta.id, i)
@@ -182,7 +188,7 @@ final class GameCenterManager: ObservableObject {
         guard isAuthenticated else { return ([:], []) }
         var result: [String: Double] = [:]
         var noEntry: [String] = []
-        for meta in TrackRegistry.allTracks {
+        for meta in TrackRegistry.competitiveTracks {
             let leaderboardId = meta.leaderboardId
             do {
                 let leaderboards = try await GKLeaderboard.loadLeaderboards(IDs: [leaderboardId])
@@ -229,8 +235,8 @@ final class GameCenterManager: ObservableObject {
     func calculateChampionship(topPerTrack: Int = 10) async -> ChampionshipResult {
         guard isAuthenticated else { return ChampionshipResult(standings: [], localPlayer: nil) }
 
-        let allLeaderboardIDs = TrackRegistry.allTracks.map { $0.leaderboardId }
-        let trackByLeaderboard = Dictionary(uniqueKeysWithValues: TrackRegistry.allTracks.map { ($0.leaderboardId, $0) })
+        let allLeaderboardIDs = TrackRegistry.competitiveTracks.map { $0.leaderboardId }
+        let trackByLeaderboard = Dictionary(uniqueKeysWithValues: TrackRegistry.competitiveTracks.map { ($0.leaderboardId, $0) })
         let localName = GKLocalPlayer.local.displayName
 
         // playerName -> [TrackResult]
@@ -283,6 +289,7 @@ final class GameCenterManager: ObservableObject {
     }
 
     func loadSectorRecords(trackId: String) async -> [SectorRecord?] {
+        guard !TrackRegistry.isDevelopmentTrack(trackId) else { return [nil, nil, nil] }
         guard isAuthenticated else { return [nil, nil, nil] }
         var result: [SectorRecord?] = [nil, nil, nil]
         for i in 0..<3 {

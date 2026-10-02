@@ -42,7 +42,7 @@ struct ResultView: View {
                         .buttonStyle(.bordered)
 
                     #if DEBUG
-                    let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || data.trackId == "dev"
+                    let canShowLeaderboard = GameCenterManager.shared.isAuthenticated || TrackRegistry.isDevelopmentTrack(data.trackId)
                     #else
                     let canShowLeaderboard = GameCenterManager.shared.isAuthenticated
                     #endif

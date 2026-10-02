@@ -185,7 +185,7 @@ final class GameCenterManager: ObservableObject {
         }
 
         // gcTime 0 is GameKit's phantom "no entry" localPlayerEntry — never persist it.
-        for (trackId, gcTime) in gcTimes where gcTime > 0 {
+        for (trackId, gcTime) in gcTimes where gcTime > 0 && !TrackRegistry.isDevelopmentTrack(trackId) {
             let serverMs = Self.gcMs(gcTime)
             let localBest = PersistenceManager.getBestTime(trackId: trackId)
 
@@ -206,7 +206,7 @@ final class GameCenterManager: ObservableObject {
             }
         }
 
-        for trackId in noEntry {
+        for trackId in noEntry where !TrackRegistry.isDevelopmentTrack(trackId) {
             if PersistenceManager.uploadedLapMs(trackId: trackId) != nil {
                 // We confirmed a record on the server before and now it's gone —
                 // deleted server-side. Drop the local copy instead of re-uploading.
@@ -230,7 +230,7 @@ final class GameCenterManager: ObservableObject {
             return
         }
 
-        for (trackId, gcSectors) in gcData {
+        for (trackId, gcSectors) in gcData where !TrackRegistry.isDevelopmentTrack(trackId) {
             let localTimes = PersistenceManager.getBestSectorTimes(trackId: trackId)
             var toUpload: [TimeInterval?] = [nil, nil, nil]
 
@@ -271,6 +271,7 @@ final class GameCenterManager: ObservableObject {
     }
 
     func submitLapTimeToSupabase(trackId: String, lapTime: TimeInterval) async throws {
+        guard !TrackRegistry.isDevelopmentTrack(trackId) else { return }
         let lapTimeMs = Int(lapTime * 1000)
         _ = try await sendMessageWithTimeout(["type": "submitLapTimeToSupabase", "trackId": trackId, "lapTimeMs": lapTimeMs])
     }
@@ -341,15 +342,12 @@ final class GameCenterManager: ObservableObject {
     #if DEBUG
     // MARK: - Dev Track Mock
 
-    private static let devTrackId = "dev"
-    private static let devLeaderboardId = LeaderboardIDs.lapTime("dev")
-
     static func isDevTrack(_ trackId: String) -> Bool {
-        trackId == devTrackId
+        TrackRegistry.isDevelopmentTrack(trackId)
     }
 
     static func isDevLeaderboard(_ leaderboardId: String) -> Bool {
-        leaderboardId == devLeaderboardId
+        TrackRegistry.isDevelopmentLeaderboard(leaderboardId)
     }
 
     private static func mockLeaderboardData() -> LeaderboardData {

@@ -35,6 +35,11 @@ enum SectorConfig {
         case "abudhabi":          return TrackLayout(startOffset: 0.00, sector1End: 0.276, sector2End: 0.627)
         #if DEBUG
         case "dev":               return TrackLayout(startOffset: 0.00, sector1End: 0.299, sector2End: 0.683)
+        // Sepang retains its historical layout; telemetry SVG sector starts
+        // define Imola and Portimao's boundaries at 800-point resolution.
+        case "sepang":            return TrackLayout(startOffset: 0.70, sector1End: 0.352, sector2End: 0.689)
+        case "imola":             return TrackLayout(startOffset: 0.00, sector1End: 0.3675, sector2End: 0.69125)
+        case "portimao":          return TrackLayout(startOffset: 0.00, sector1End: 0.31125, sector2End: 0.67125)
         #endif
         default:                  return TrackLayout(startOffset: 0.00, sector1End: 0.333, sector2End: 0.667)
         }
