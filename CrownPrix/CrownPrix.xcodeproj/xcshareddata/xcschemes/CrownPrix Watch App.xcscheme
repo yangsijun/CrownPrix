@@ -58,7 +58,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "ED240F8A2F2BAC41000D0EFA"
             BuildableName = "CrownPrix Watch App.app"
-            BlueprintName = "CrownPrix Watch App"
             ReferencedContainer = "container:CrownPrix.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -75,7 +74,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "ED240F8A2F2BAC41000D0EFA"
             BuildableName = "CrownPrix Watch App.app"
-            BlueprintName = "CrownPrix Watch App"
             ReferencedContainer = "container:CrownPrix.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
