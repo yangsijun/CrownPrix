@@ -1,0 +1,51 @@
+targets:
+  - iphone65
+
+output_dir: shots-ko
+
+style:
+  background: "#FFFFFF"
+  headline_color: "#000000"
+  subhead_color: "#E10600"
+  corner_radius: 0.0   # bezels carry their own device outline
+
+screenshots:
+  - image: framed/1-framed.png
+    name: 01-race
+    headline: 크라운으로 조향하세요.
+    subhead: 디지털 크라운이 곧 스티어링 휠입니다.
+    style: { image_width: 0.9 }
+
+  - image: framed/2-framed.png
+    name: 02-tracks
+    headline: 24개의 실제 서킷.
+    subhead: 2026 캘린더 전체를 손목 위에.
+    style: { image_width: 0.9 }
+
+  - image: framed/3-framed.png
+    name: 03-start
+    headline: 라이츠 아웃. 출발.
+    subhead: 스타트의 순간을 손목으로 느끼세요.
+    style: { image_width: 0.9 }
+
+  - image: framed/4-framed.png
+    name: 04-fastest-lap
+    headline: 세계에서 가장 빠른 랩에 도전.
+    subhead: 3개 섹터, 0.001초까지 겨룹니다.
+    style: { image_width: 0.9 }
+
+  - image: framed/5-framed.png
+    name: 05-rankings
+    headline: 서킷마다 리더보드가 있습니다.
+    subhead: 내 순위를 정확히 확인하세요.
+
+  - image: framed/6-framed.png
+    name: 06-championship
+    headline: 월드 챔피언십을 정복하세요.
+    subhead: 24개 서킷에서 F1 방식 포인트로.
+
+  - image: framed/7-framed.png
+    name: 07-liveries
+    headline: 나만의 차를 만드세요.
+    subhead: 8가지 색상, 라이브 프리뷰.
+    style: { image_width: 0.9 }

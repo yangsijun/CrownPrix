@@ -1,0 +1,51 @@
+targets:
+  - iphone65
+
+output_dir: shots
+
+style:
+  background: "#FFFFFF"
+  headline_color: "#000000"
+  subhead_color: "#E10600"
+  corner_radius: 0.0   # bezels carry their own device outline
+
+screenshots:
+  - image: framed/1-framed.png
+    name: 01-race
+    headline: Steer with the Crown.
+    subhead: Your Digital Crown is the steering wheel.
+    style: { image_width: 0.9 }
+
+  - image: framed/2-framed.png
+    name: 02-tracks
+    headline: 24 real-world circuits.
+    subhead: The full 2026 calendar on your wrist.
+    style: { image_width: 0.9 }
+
+  - image: framed/3-framed.png
+    name: 03-start
+    headline: Five lights. Then go.
+    subhead: Feel the start through your wrist.
+    style: { image_width: 0.9 }
+
+  - image: framed/4-framed.png
+    name: 04-fastest-lap
+    headline: Chase the world's fastest lap.
+    subhead: Three sectors. Every millisecond counts.
+    style: { image_width: 0.9 }
+
+  - image: framed/5-framed.png
+    name: 05-rankings
+    headline: A leaderboard for every circuit.
+    subhead: See exactly where you stand.
+
+  - image: framed/6-framed.png
+    name: 06-championship
+    headline: Climb the World Championship.
+    subhead: F1-style points across all 24 circuits.
+
+  - image: framed/7-framed.png
+    name: 07-liveries
+    headline: Make it your car.
+    subhead: Eight liveries with a live preview.
+    style: { image_width: 0.9 }
