@@ -34,7 +34,7 @@ Python utilities for managing Game Center leaderboards via the App Store Connect
 
 ### Internal
 - `.env` in project root for API credentials
-- `AuthKey_2KR79L4Q68.p8` for JWT signing
+- `~/.appstoreconnect/private_keys/AuthKey_2KR79L4Q68.p8` (via `ASC_KEY_PATH`) for JWT signing
 
 ### External
 - `PyJWT` — JWT token generation

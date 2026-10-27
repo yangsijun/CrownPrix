@@ -4,3 +4,14 @@
 xcuserdata/
 .sisyphus/
 Secrets.xcconfig
+.omx/
+.omc/
+__pycache__/
+*.py[cod]
+
+# Local upload reports and generated screenshot outputs
+screenshots/.asc/reports/
+screenshots/framed/
+screenshots/shots/
+screenshots/shots-ko/
+screenshots/shots-watch/

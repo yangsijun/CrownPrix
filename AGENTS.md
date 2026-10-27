@@ -14,7 +14,7 @@ A Formula 1 racing game for Apple Watch with an iOS companion app. Players steer
 | `Info.plist` | Bundle metadata, app category (racing-games) |
 | `.env.example` | App Store Connect API credential template |
 | `.gitignore` | Git ignore rules |
-| `AuthKey_2KR79L4Q68.p8` | App Store Connect API auth key |
+| ~~`AuthKey_2KR79L4Q68.p8`~~ | Not in the repo — ASC API key lives at `~/.appstoreconnect/private_keys/AuthKey_2KR79L4Q68.p8` (`ASC_KEY_PATH` in `.env`) |
 
 ## Subdirectories
 
